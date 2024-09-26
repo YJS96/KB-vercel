@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,15 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const router = useRouter();
+const route = useRoute();
+
+const bankName = ref('');
+const bankImg = ref('');
+
+onMounted(() => {
+  bankName.value = (route.query.bankName as string) || '';
+  bankImg.value = (route.query.bankImg as string) || '';
+});
 
 const accountNumber = ref('');
 const accountPassword = ref('');
@@ -53,8 +62,8 @@ const handleNextClick = () => {
   <HeadBar :back-button="true">회원가입</HeadBar>
   <Main :headbar="true" :navbar="false" :padded="true" :bg-gray="false">
     <div class="bank-name">
-      <img src="/images/banks/kb-bank.png" class="bank-icon" />
-      <div>국민은행</div>
+      <img :src="bankImg" class="bank-icon" />
+      <div>{{ bankName }}</div>
     </div>
 
     <div class="bank-container">

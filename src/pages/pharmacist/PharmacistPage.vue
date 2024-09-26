@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
@@ -12,8 +13,25 @@ import {
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
+import { QrcodeStream } from 'vue-qrcode-reader';
 
+const router = useRouter();
 const isDialogOpen = ref(false);
+
+function onDetect(detectedCodes: Array<{ rawValue: string }>) {
+  const prescriptionId = detectedCodes[0]?.rawValue || 'default';
+  isDialogOpen.value = false;
+  router.push({
+    name: '/pharmacistPayment',
+    params: { id: prescriptionId }
+  });
+}
+
+const error = ref('');
+
+function onError(err: Error) {
+  error.value = `오류: ${err.message}`;
+}
 </script>
 
 <template>
@@ -32,7 +50,8 @@ const isDialogOpen = ref(false);
             <DialogTitle>QR 코드 스캔</DialogTitle>
             <DialogDescription>처방전 QR 코드를 스캔해주세요.</DialogDescription>
           </DialogHeader>
-          <div class="qr-scanner-placeholder">QR 코드 스캐너가 여기에 표시됩니다.</div>
+          <QrcodeStream @detect="onDetect" @error="onError" />
+          <p v-if="error">{{ error }}</p>
         </DialogContent>
       </Dialog>
 
@@ -47,7 +66,7 @@ const isDialogOpen = ref(false);
           <div class="recent-item">
             <div class="recent-info">
               <div class="recent-group">
-                <div class="middot"></div>
+                <i class="fa-regular fa-file"></i>
                 <div class="recent-name">한상민 환자님</div>
               </div>
               <div class="recent-date">24. 09. 10 | 오후 4:18</div>
@@ -61,7 +80,7 @@ const isDialogOpen = ref(false);
           <div class="recent-item">
             <div class="recent-info">
               <div class="recent-group">
-                <div class="middot"></div>
+                <i class="fa-regular fa-file"></i>
                 <div class="recent-name">문환희 환자님</div>
               </div>
               <div class="recent-date">24. 09. 09 | 오전 11:30</div>
@@ -75,7 +94,7 @@ const isDialogOpen = ref(false);
           <div class="recent-item">
             <div class="recent-info">
               <div class="recent-group">
-                <div class="middot"></div>
+                <i class="fa-regular fa-file"></i>
                 <div class="recent-name">김도은 환자님</div>
               </div>
               <div class="recent-date">24. 09. 09 | 오전 11:30</div>
@@ -146,6 +165,10 @@ const isDialogOpen = ref(false);
   margin-bottom: 20px;
 }
 
+.recent-item:last-child {
+  margin-bottom: 0px;
+}
+
 .recent-info {
   display: flex;
   flex-direction: column;
@@ -158,12 +181,12 @@ const isDialogOpen = ref(false);
   gap: 6px;
 }
 
-.middot {
+/* .middot {
   width: 6px;
   height: 6px;
   border-radius: 100px;
   background-color: var(--black);
-}
+} */
 
 .recent-name {
   font-size: 16px;
@@ -186,16 +209,5 @@ const isDialogOpen = ref(false);
 .status-text {
   font-size: 14px;
   color: var(--kb-yellow);
-}
-
-.qr-scanner-placeholder {
-  width: 100%;
-  height: 500px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--gray);
-  border: 1px dashed var(--nav-gray);
-  border-radius: 8px;
 }
 </style>

@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 const faceIdStore = useFaceIdStore();
 const userName = ref('임시');
 
+faceIdStore.isAuthenticated = false;
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
 };
@@ -62,10 +63,18 @@ const prescDetail = [
 ];
 
 const claimRequested = ref(false);
+const medicineReceived = ref(false);
 
 const handleClaim = () => {
-  toast.success('청구 신청이 완료되었습니다.');
+  if (claimRequested.value) return;
+  toast.success('청구 신청이 완료되었습니다');
   claimRequested.value = true;
+};
+
+const handleReceived = () => {
+  if (medicineReceived.value) return;
+  toast.success('약을 수령했습니다');
+  medicineReceived.value = true;
 };
 
 const saveAsImage = async (item: string) => {
@@ -134,7 +143,9 @@ const saveAsImage = async (item: string) => {
             <span class="misc-info-desc">{서비스명}을 사용하지 않았어도 바꿀 수 있어요</span>
           </div>
         </div>
-        <Button variant="destructive">완료</Button>
+        <Button @click="handleReceived()" :variant="medicineReceived ? 'destructive' : 'default'">{{
+          medicineReceived ? '완료' : '신청'
+        }}</Button>
       </div>
     </div>
     <div class="presc-title">처방전 상세</div>
@@ -148,7 +159,7 @@ const saveAsImage = async (item: string) => {
           <PopoverTrigger>
             <Button variant="outline">3개</Button>
           </PopoverTrigger>
-          <PopoverContent class="medicine-detail">
+          <PopoverContent class="me-4 flex flex-col gap-2 text-sm text-cssblack">
             <div>약이름 1</div>
             <div>약이름 2</div>
             <div>약이름 3</div>
@@ -464,6 +475,7 @@ const saveAsImage = async (item: string) => {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <div class="h-6"></div>
   </Main>
 </template>
 

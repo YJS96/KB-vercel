@@ -87,7 +87,7 @@ const router = createRouter({
       component: PharmacistPage
     },
     {
-      path: '/pharmacist/payment',
+      path: '/pharmacist/:id',
       name: '/pharmacistPayment',
       component: PharmacistPageScanPayment
     },

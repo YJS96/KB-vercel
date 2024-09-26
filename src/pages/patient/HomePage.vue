@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useFaceIdStore } from '@/stores/faceId';
+import { useMedicationStore } from '@/stores/medication';
+import { Toaster } from '@steveyuowo/vue-hot-toast';
+import '@/assets/toast.css';
 import QRCodeVue3 from 'qrcode-vue3';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
@@ -25,7 +28,10 @@ const handleSummaryDetail = () => {
 };
 
 const faceIdStore = useFaceIdStore();
+const medicationStore = useMedicationStore();
+
 const userName = ref('임시');
+faceIdStore.isAuthenticated = false;
 
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
@@ -34,7 +40,13 @@ const handleFaceIdAuth = () => {
 
 <template>
   <NavBar />
+  <Toaster />
   <Main :headbar="false" :navbar="true" :padded="true" :bg-gray="true">
+    <div class="flex justify-between">
+      <Button variant="destructive" @click="$router.push('/login')">로그인</Button>
+      <Button variant="destructive" @click="$router.push('/pharmacist')">약사</Button>
+      <Button variant="destructive" @click="$router.push('/doctor')">의사</Button>
+    </div>
     <div class="notice">
       <img src="/images/tada.svg" />
       <div>아직 조제받지 않은 처방전이 있어요</div>
@@ -102,21 +114,33 @@ const handleFaceIdAuth = () => {
             <div class="daily-check-text">아침 식사 후 알약 3개</div>
             <Badge>졸음</Badge>
           </div>
-          <Button variant="destructive">취소</Button>
+          <Button
+            :variant="medicationStore.morning ? 'destructive' : 'default'"
+            @click="medicationStore.toggleMedication('morning')"
+            >{{ medicationStore.morning ? '취소' : '확인' }}</Button
+          >
         </div>
         <div class="daily-check">
           <div class="daily-check-left">
             <div class="daily-check-text">점심 식사 후 알약 3개</div>
             <Badge>졸음</Badge>
           </div>
-          <Button variant="destructive">취소</Button>
+          <Button
+            :variant="medicationStore.afternoon ? 'destructive' : 'default'"
+            @click="medicationStore.toggleMedication('afternoon')"
+            >{{ medicationStore.afternoon ? '취소' : '확인' }}</Button
+          >
         </div>
         <div class="daily-check">
           <div class="daily-check-left">
             <div class="daily-check-text">저녁 식사 후 알약 3개</div>
             <Badge>졸음</Badge>
           </div>
-          <Button>확인</Button>
+          <Button
+            :variant="medicationStore.evening ? 'destructive' : 'default'"
+            @click="medicationStore.toggleMedication('evening')"
+            >{{ medicationStore.evening ? '취소' : '확인' }}</Button
+          >
         </div>
       </div>
     </ShadowBox>
@@ -159,7 +183,7 @@ const handleFaceIdAuth = () => {
     </ShadowBox>
 
     <ShadowBox :padding-x="20" :padding-y="20">
-      <div class="title-with-arrow">
+      <div class="title-with-arrow" @click="$router.push('/prescription')">
         <div class="shadow-box-title">최근 처방전 내역</div>
         <i class="fa-solid fa-chevron-right"></i>
       </div>

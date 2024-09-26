@@ -1,24 +1,19 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 import { Button } from '@/components/ui/button';
 
-interface MedicineItem {
-  name: string;
-  price: number;
-}
-
+const router = useRouter();
+const route = useRoute();
 const showPaymentDetail = ref(false);
 
-const medicineList = ref<MedicineItem[]>([
+const medicineList = ref([
   { name: '약품 A', price: 12000 },
   { name: '약품 B', price: 15000 },
-  { name: '약품 C', price: 8000 },
-  { name: '약품 D', price: 20000 },
-  { name: '약품 E', price: 10000 },
-  { name: '약품 F', price: 3000 }
+  { name: '약품 C', price: 8000 }
 ]);
 
 const totalPrice = computed(() => {
@@ -28,22 +23,27 @@ const totalPrice = computed(() => {
 const handlePaymentDetail = () => {
   showPaymentDetail.value = !showPaymentDetail.value;
 };
+
+const handlePaymentRequest = () => {
+  // 결제 처리 로직을 여기에 추가
+
+  router.push({ name: '/pharmacist' });
+};
 </script>
 
 <template>
-  <HeadBar :back-button="true"></HeadBar>
+  <HeadBar :back-button="true">처방전 상세</HeadBar>
   <Main :headbar="true" :navbar="false" :padded="true" :bg-gray="true">
     <ShadowBox :padding-x="20" :padding-y="20" class="prescription-container">
       <div class="prescription-title">처방전</div>
       <div class="prescription-info">
-        Lorem ipsum dolor sit amet, consectetur adipisicing elit. Quam delectus autem amet tempore,
-        error nihil quae quas aut iure quisquam doloremque voluptatum nesciunt accusantium, et
-        numquam nisi totam id. Commodi!
+        처방전 ID: {{ route.params.id }}
+        <!-- 여기에 추가적인 처방전 정보를 표시할 수 있습니다 -->
       </div>
     </ShadowBox>
 
     <ShadowBox :padding-x="20" :padding-y="20">
-      <div class="pill-arrow" @click="handlePaymentDetail()">
+      <div class="pill-arrow" @click="handlePaymentDetail">
         <div class="title-text">약품 내역</div>
         <i class="fa-solid fa-chevron-down" :class="{ rotate: showPaymentDetail }"></i>
       </div>
@@ -65,7 +65,7 @@ const handlePaymentDetail = () => {
       </div>
     </ShadowBox>
 
-    <Button size="lg">결제 요청</Button>
+    <Button size="lg" @click="handlePaymentRequest">결제 요청</Button>
   </Main>
 </template>
 

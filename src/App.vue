@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const threshold = 176; // 새로고침을 트리거하는 당김 거리 (픽셀)
 const pullDistance = ref(0);
 const startY = ref(0);
 const isRefreshing = ref(false);
 const showRefreshingMessage = ref(false);
 
-const emit = defineEmits(['refresh']);
+// const emit = defineEmits(['refresh']);
 
 const onTouchStart = (e: TouchEvent) => {
   if (!isRefreshing.value) {
@@ -36,16 +38,13 @@ const startRefresh = () => {
   setTimeout(() => {
     showRefreshingMessage.value = true;
     setTimeout(() => {
-      refreshContent();
-      isRefreshing.value = false;
-      showRefreshingMessage.value = false;
+      router.go(0);
+      // emit('refresh');
+      // isRefreshing.value = false;
+      // showRefreshingMessage.value = false;
       pullDistance.value = 0;
-    }, 800);
+    }, 350);
   }, 0);
-};
-
-const refreshContent = () => {
-  emit('refresh');
 };
 
 const isOverThreshold = computed(() => pullDistance.value > threshold);

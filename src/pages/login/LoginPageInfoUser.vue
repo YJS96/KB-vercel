@@ -14,16 +14,22 @@ const banks = [
   { name: '기업은행', img: '/images/banks/ibk-bank.png' }
 ];
 
-const selectedBank = ref<string | null>(null);
+const selectedBank = ref<{ name: string; img: string } | null>(null);
 const router = useRouter();
 
-const selectBank = (bankName: string) => {
-  selectedBank.value = bankName;
+const selectBank = (bank: { name: string; img: string }) => {
+  selectedBank.value = bank;
 };
 
 const handleNextButtonClick = () => {
   if (selectedBank.value) {
-    router.push('/login/bank_id');
+    router.push({
+      path: '/login/bank_id',
+      query: {
+        bankName: selectedBank.value.name,
+        bankImg: selectedBank.value.img
+      }
+    });
   }
 };
 </script>
@@ -38,8 +44,8 @@ const handleNextButtonClick = () => {
         v-for="bank in banks"
         :key="bank.name"
         class="bank-list"
-        :class="{ selected: selectedBank === bank.name }"
-        @click="selectBank(bank.name)"
+        :class="{ selected: selectedBank?.name === bank.name }"
+        @click="selectBank(bank)"
       >
         <img :src="bank.img" class="bank-icon" />
         {{ bank.name }}

@@ -1,15 +1,21 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
 import moment from 'moment';
+import { Toaster } from '@steveyuowo/vue-hot-toast';
+import '@/assets/toast.css';
 import 'moment/locale/ko';
 import { useThemeStore } from '@/stores/theme';
+import { useMedicationStore } from '@/stores/medication';
+import { useMealTimeStore } from '@/stores/mealtime';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 import Badge from '@/components/Badge.vue';
-
 import { Button } from '@/components/ui/button';
-import { computed, onMounted, ref } from 'vue';
+
+const medicationStore = useMedicationStore();
+const mealTimeStore = useMealTimeStore();
 
 const themeStore = useThemeStore();
 setTimeout(() => {
@@ -64,6 +70,7 @@ onMounted(() => {
 </script>
 
 <template>
+  <Toaster />
   <HeadBar>복용약</HeadBar>
   <NavBar />
   <Main :headbar="true" :navbar="true" :bg-gray="true">
@@ -84,9 +91,73 @@ onMounted(() => {
       <div class="day-alert-top">
         <div class="meal-and-time">
           <span class="meal">아침</span>
-          <span class="meal-time">오전 09:00</span>
+          <span class="meal-time">{{ mealTimeStore.breakfast }}</span>
         </div>
-        <Button variant="destructive">취소</Button>
+        <Button
+          :variant="medicationStore.morning ? 'destructive' : 'default'"
+          @click="medicationStore.toggleMedication('morning')"
+          >{{ medicationStore.morning ? '취소' : '확인' }}</Button
+        >
+      </div>
+      <div class="medicine-list">
+        <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+          <div class="medicine-info-left">
+            <div class="medicine-icon-name">
+              <div class="medicine-icon">
+                <!-- 아이콘 들어갈 자리 -->
+              </div>
+              <span class="medicine-name">코푸정</span>
+            </div>
+            <div class="medicine-badge-frame">
+              <Badge>졸음</Badge>
+              <Badge>어지러움</Badge>
+            </div>
+          </div>
+          <span class="medicine-intake">1정</span>
+        </div>
+      </div>
+    </ShadowBox>
+    <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+      <div class="day-alert-top">
+        <div class="meal-and-time">
+          <span class="meal">점심</span>
+          <span class="meal-time">{{ mealTimeStore.lunch }}</span>
+        </div>
+        <Button
+          :variant="medicationStore.afternoon ? 'destructive' : 'default'"
+          @click="medicationStore.toggleMedication('afternoon')"
+          >{{ medicationStore.afternoon ? '취소' : '확인' }}</Button
+        >
+      </div>
+      <div class="medicine-list">
+        <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+          <div class="medicine-info-left">
+            <div class="medicine-icon-name">
+              <div class="medicine-icon">
+                <!-- 아이콘 들어갈 자리 -->
+              </div>
+              <span class="medicine-name">코푸정</span>
+            </div>
+            <div class="medicine-badge-frame">
+              <Badge>졸음</Badge>
+              <Badge>어지러움</Badge>
+            </div>
+          </div>
+          <span class="medicine-intake">1정</span>
+        </div>
+      </div>
+    </ShadowBox>
+    <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+      <div class="day-alert-top">
+        <div class="meal-and-time">
+          <span class="meal">저녁</span>
+          <span class="meal-time">{{ mealTimeStore.dinner }}</span>
+        </div>
+        <Button
+          :variant="medicationStore.evening ? 'destructive' : 'default'"
+          @click="medicationStore.toggleMedication('evening')"
+          >{{ medicationStore.evening ? '취소' : '확인' }}</Button
+        >
       </div>
       <div class="medicine-list">
         <div class="medicine-info-frame" @click="$router.push('/medicine/1')">

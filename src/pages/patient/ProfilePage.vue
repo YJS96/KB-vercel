@@ -3,6 +3,7 @@ import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
+import { useMealTimeStore } from '@/stores/mealtime';
 import {
   Dialog,
   // DialogHeader,
@@ -11,22 +12,31 @@ import {
   DialogContent,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
-} from '@/components/ui/dialog'
-
+  DialogTrigger
+} from '@/components/ui/dialog';
 import Button from '@/components/ui/button/Button.vue';
 import TimeSelector from '@/components/TimeSelector.vue';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 
+const mealTimeStore = useMealTimeStore();
 
-const breakfastTime = ref('09:00');
-const lunchTime = ref('12:00');
-const dinnerTime = ref('18:00');
+const breakfastTime = ref(mealTimeStore.breakfast);
+const lunchTime = ref(mealTimeStore.lunch);
+const dinnerTime = ref(mealTimeStore.dinner);
 
-const saveTimes = () => {
-  console.log('Saved times:', { breakfastTime: breakfastTime.value, lunchTime: lunchTime.value, dinnerTime: dinnerTime.value });
-}
+const updateMealTimes = () => {
+  mealTimeStore.updateAllMealTimes({
+    breakfast: breakfastTime.value,
+    lunch: lunchTime.value,
+    dinner: dinnerTime.value
+  });
+};
 
+onMounted(() => {
+  breakfastTime.value = mealTimeStore.breakfast;
+  lunchTime.value = mealTimeStore.lunch;
+  dinnerTime.value = mealTimeStore.dinner;
+});
 </script>
 
 <template>
@@ -55,15 +65,15 @@ const saveTimes = () => {
       <div class="settings-frame">
         <div class="settings-row">
           <div class="settings-key">아침</div>
-          <div class="settings-value">09:00</div>
+          <div class="settings-value">{{ mealTimeStore.breakfast }}</div>
         </div>
         <div class="settings-row">
           <div class="settings-key">점심</div>
-          <div class="settings-value">12:00</div>
+          <div class="settings-value">{{ mealTimeStore.lunch }}</div>
         </div>
         <div class="settings-row">
           <div class="settings-key">저녁</div>
-          <div class="settings-value">18:00</div>
+          <div class="settings-value">{{ mealTimeStore.dinner }}</div>
         </div>
         <Dialog>
           <DialogTrigger>
@@ -82,7 +92,9 @@ const saveTimes = () => {
             <TimeSelector title="저녁" v-model="dinnerTime" />
 
             <DialogFooter class="modal-footer">
-              <Button size="lg">저장</Button>
+              <DialogClose>
+                <Button size="lg" @click="updateMealTimes">저장</Button>
+              </DialogClose>
               <DialogClose>
                 <Button variant="destructive" size="lg">닫기</Button>
               </DialogClose>
@@ -101,7 +113,6 @@ const saveTimes = () => {
         </div>
       </div>
     </ShadowBox>
-    
   </Main>
 </template>
 
@@ -121,7 +132,7 @@ const saveTimes = () => {
 .settings-row {
   display: flex;
   justify-content: space-between;
-  align-items: center
+  align-items: center;
 }
 
 .settings-key {
@@ -145,7 +156,7 @@ const saveTimes = () => {
 }
 
 .modal-header {
-  margin-bottom: 12px
+  margin-bottom: 12px;
 }
 
 .input-frame {
