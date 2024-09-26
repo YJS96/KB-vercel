@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useFaceIdStore } from '@/stores/faceId';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
@@ -25,6 +26,13 @@ import {
 } from '@/components/ui/carousel';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+
+const faceIdStore = useFaceIdStore();
+const userName = ref('임시');
+
+const handleFaceIdAuth = () => {
+  faceIdStore.authenticate(userName.value);
+};
 
 const prescDetail = [
   {
@@ -150,12 +158,12 @@ const saveAsImage = async (item: string) => {
     </div>
     <div class="seperator"></div>
     <Dialog>
-      <DialogTrigger class="docu-button">
+      <DialogTrigger class="docu-button" @click="handleFaceIdAuth">
         <span>처방전 보기</span>
         <i class="fa-solid fa-chevron-right"></i>
       </DialogTrigger>
       <DialogContent>
-        <div class="presc-frame">
+        <div v-if="faceIdStore.isAuthenticated" class="presc-frame">
           <div class="text-right px-1 mt-1">(환자보관용)</div>
           <div class="presc-header">처&nbsp;&nbsp;&nbsp; 방&nbsp;&nbsp;&nbsp; 전</div>
           <div class="flex justify-between px-1 mb-1">
@@ -339,8 +347,11 @@ const saveAsImage = async (item: string) => {
             </tbody>
           </table>
         </div>
+        <div v-else class="text-center mt-4">본인인증을 완료해주세요</div>
         <DialogFooter class="modal-footer">
-          <Button size="lg" @click="saveAsImage('presc-frame')">이미지로 저장</Button>
+          <Button v-if="faceIdStore.isAuthenticated" size="lg" @click="saveAsImage('presc-frame')"
+            >이미지로 저장</Button
+          >
           <DialogClose>
             <Button variant="destructive" size="lg">닫기</Button>
           </DialogClose>

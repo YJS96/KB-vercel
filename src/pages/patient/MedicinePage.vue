@@ -1,64 +1,83 @@
 <script setup lang="ts">
+import moment from 'moment';
+import 'moment/locale/ko';
+import { useThemeStore } from '@/stores/theme';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
-import Main from '@/components/Main.vue'
+import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 import Badge from '@/components/Badge.vue';
 
 import { Button } from '@/components/ui/button';
-import { useThemeStore } from '@/stores/theme'
+import { computed, onMounted, ref } from 'vue';
 
-const themeStore = useThemeStore()
+const themeStore = useThemeStore();
 setTimeout(() => {
-  themeStore.setThemeColor('#FDFDFD')
+  themeStore.setThemeColor('#FDFDFD');
 }, 10);
 
+moment.locale('ko');
+const today = moment();
+const selectedDate = ref(today);
+const calendarContainer = ref<HTMLElement | null>(null);
+
+const dateRange = computed(() => {
+  const dates = [];
+  for (let i = -14; i < 21; i++) {
+    dates.push(moment(today).add(i, 'days'));
+  }
+  return dates;
+});
+
+const selectDate = (date: moment.Moment) => {
+  selectedDate.value = date;
+};
+
+const isSelected = (date: moment.Moment) => {
+  return date.isSame(selectedDate.value, 'day');
+};
+
+const isSaturday = (date: moment.Moment) => {
+  return date.day() === 6;
+};
+
+const isSunday = (date: moment.Moment) => {
+  return date.day() === 0;
+};
+
+const getKoreanWeekday = (date: moment.Moment): string => {
+  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  return weekdays[date.day()];
+};
+
+onMounted(() => {
+  if (calendarContainer.value) {
+    const tomorrowElement = calendarContainer.value.querySelector('.day-frame:nth-child(15)');
+    if (tomorrowElement) {
+      const containerRect = calendarContainer.value.getBoundingClientRect();
+      const tomorrowRect = tomorrowElement.getBoundingClientRect();
+      const scrollPosition = tomorrowRect.left - containerRect.left - 24;
+      calendarContainer.value.scrollLeft = scrollPosition;
+    }
+  }
+});
 </script>
 
 <template>
   <HeadBar>복용약</HeadBar>
   <NavBar />
   <Main :headbar="true" :navbar="true" :bg-gray="true">
-    <div class="calendar-container">
-      <div class="day-frame">
-        <span class="weekday">수</span>
-        <span class="day" :class="{isToday: true}">11</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">목</span>
-        <span class="day">12</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">금</span>
-        <span class="day">13</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday" :class="{isSaturday: true}">토</span>
-        <span class="day" >14</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday" :class="{isSunday: true}">일</span>
-        <span class="day">15</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">월</span>
-        <span class="day">16</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">수</span>
-        <span class="day">11</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">수</span>
-        <span class="day">11</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">수</span>
-        <span class="day">11</span>
-      </div>
-      <div class="day-frame">
-        <span class="weekday">수</span>
-        <span class="day">11</span>
+    <div class="calendar-container" ref="calendarContainer">
+      <div
+        v-for="date in dateRange"
+        class="day-frame"
+        @click="selectDate(date)"
+        :key="date.format('YYYY-MM-DD')"
+      >
+        <span class="weekday" :class="{ isSaturday: isSaturday(date), isSunday: isSunday(date) }">{{
+          getKoreanWeekday(date)
+        }}</span>
+        <span class="day" :class="{ isSelected: isSelected(date) }">{{ date.format('D') }}</span>
       </div>
     </div>
     <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
@@ -112,6 +131,10 @@ setTimeout(() => {
   color: var(--dark-gray);
 }
 
+.day-frame:last-child {
+  margin-right: 48px;
+}
+
 .weekday {
   font-size: 16px;
 }
@@ -125,17 +148,16 @@ setTimeout(() => {
 }
 
 .day {
-  font-size: 18px;
-  width: 34px;
-  height: 34px;
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
   border-radius: 999px;
   display: flex;
   justify-content: center;
   align-items: center;
-  
 }
 
-.day.isToday {
+.day.isSelected {
   color: var(--black);
   background-color: var(--css-primary);
 }
@@ -145,7 +167,6 @@ setTimeout(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
-
 }
 
 .meal-and-time {
@@ -212,5 +233,4 @@ setTimeout(() => {
   font-size: 18px;
   font-weight: 500;
 }
-
 </style>
