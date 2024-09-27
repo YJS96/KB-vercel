@@ -36,6 +36,20 @@ faceIdStore.isAuthenticated = false;
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
 };
+
+const tabs = ref([
+  { id: 1, name: '병원이름 1' },
+  { id: 2, name: '병원이름 2' },
+  { id: 3, name: '병원이름 3' },
+  { id: 4, name: '병원이름 4' },
+  { id: 5, name: '병원이름 5' }
+]);
+
+const selectedTabId = ref(1);
+
+const selectTab = (tabId: number) => {
+  selectedTabId.value = tabId;
+};
 </script>
 
 <template>
@@ -153,11 +167,14 @@ const handleFaceIdAuth = () => {
         </div>
         <div v-if="showSummaryDetail">
           <div class="tab-select-container">
-            <span class="tab" :class="{ selected: true }">최규찬 정형외과의원</span>
-            <span class="tab">최규찬 정형외과의원</span>
-            <span class="tab">최규찬 정형외과의원</span>
-            <span class="tab">최규찬 정형외과의원</span>
-            <span class="tab">최규찬 정형외과의원</span>
+            <span
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="tab"
+              :class="{ selected: tab.id === selectedTabId }"
+              @click="selectTab(tab.id)"
+              >{{ tab.name }}</span
+            >
           </div>
           <div>
             <div class="report-top">
@@ -204,7 +221,7 @@ const handleFaceIdAuth = () => {
               <div class="middot"></div>
               <span class="history-title">최규찬 정형외과의원</span>
             </div>
-            <div class="history-title" :class="{ received: true }">수령완료</div>
+            <div class="history-title" :class="{ received: true }">미수령</div>
           </div>
           <div class="history-date">24. 09. 10 | 오후 4:18</div>
         </div>
@@ -359,6 +376,9 @@ const handleFaceIdAuth = () => {
   transition: all 0.2s ease;
 }
 
+.tab:last-child {
+  margin-right: 20px;
+}
 .tab:hover {
   background-color: var(--css-muted);
   color: var(--white);

@@ -7,6 +7,7 @@ import ShadowBox from '@/components/ShadowBox.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ interface Medicine {
   afternoon: number;
   evening: number;
   days: number;
+  memo: string;
 }
 
 const name = ref('');
@@ -38,13 +40,20 @@ const diseaseCode = ref('');
 const medicines = ref<Medicine[]>([]);
 
 const showMedicineModal = ref(false);
-const newMedicine = ref<Medicine>({ name: '', morning: 0, afternoon: 0, evening: 0, days: 0 });
+const newMedicine = ref<Medicine>({
+  name: '',
+  morning: 0,
+  afternoon: 0,
+  evening: 0,
+  days: 0,
+  memo: ''
+});
 
 const router = useRouter();
 
 const addMedicine = () => {
   medicines.value.push({ ...newMedicine.value });
-  newMedicine.value = { name: '', morning: 0, afternoon: 0, evening: 0, days: 0 };
+  newMedicine.value = { name: '', morning: 0, afternoon: 0, evening: 0, days: 0, memo: '' };
   showMedicineModal.value = false;
 };
 
@@ -138,6 +147,9 @@ const handleNextButtonClick = () => {
                     <DialogTitle>약 등록</DialogTitle>
                     <DialogDescription>새로운 약을 등록하세요.</DialogDescription>
                   </DialogHeader>
+
+                  <div class="divider"></div>
+
                   <div class="medicine-form">
                     <Label for="medicine-name">약 이름</Label>
                     <Input
@@ -176,6 +188,14 @@ const handleNextButtonClick = () => {
                       </NumberFieldContent>
                     </NumberField>
                   </div>
+                  <div class="medicine-form">
+                    <Label for="medicine-memo">복용 방법</Label>
+                    <Textarea
+                      id="medicine-memo"
+                      v-model="newMedicine.memo"
+                      placeholder="약 복용 방법을 입력하세요."
+                    />
+                  </div>
                   <div class="dialog-footer">
                     <Button @click="addMedicine" size="lg">등록</Button>
                   </div>
@@ -194,6 +214,7 @@ const handleNextButtonClick = () => {
                     {{ medicine.evening }} 정
                   </div>
                   <div>{{ medicine.days }} 일</div>
+                  <div v-if="medicine.memo" class="medicine-memo">{{ medicine.memo }}</div>
                 </div>
                 <Button variant="ghost" size="icon" @click="removeMedicine(index)">
                   <i class="fa-solid fa-trash"></i>
@@ -261,16 +282,16 @@ const handleNextButtonClick = () => {
   align-items: center;
 }
 
-.divider {
-  height: 1px;
-  background-color: var(--dark-gray);
-  margin-bottom: 12px;
-}
-
 .medicine-form {
   display: flex;
   flex-direction: column;
-  margin-top: 16px;
+  /* margin-top: 16px; */
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--dark-gray);
+  margin-bottom: 8px;
 }
 
 .dosage-inputs {
@@ -318,8 +339,14 @@ const handleNextButtonClick = () => {
 }
 
 .medicine-dosage {
-  font-size: 0.9em;
+  font-size: 14px;
   color: var(--dark-gray);
+}
+
+.medicine-memo {
+  font-size: 14px;
+  color: var(--dark-gray);
+  margin-top: 4px;
 }
 
 .dialog-footer {

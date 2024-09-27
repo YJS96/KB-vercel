@@ -34,6 +34,11 @@ const handlePaymentRequest = () => {
 <template>
   <HeadBar :back-button="true">처방전 상세</HeadBar>
   <Main :headbar="true" :navbar="false" :padded="true" :bg-gray="true">
+    <div class="notice">
+      <i class="fa-regular fa-circle-check"></i>
+      <div>결제 완료된 처방전이에요</div>
+    </div>
+
     <ShadowBox :padding-x="20" :padding-y="20" class="prescription-container">
       <div class="prescription-title">처방전</div>
       <div class="prescription-info">
@@ -70,11 +75,20 @@ const handlePaymentRequest = () => {
 </template>
 
 <style scoped>
+.notice {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  color: var(--kb-yellow);
+  gap: 8px;
+}
+
 .prescription-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .prescription-title {
