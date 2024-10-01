@@ -495,10 +495,8 @@ onMounted(() => {
 }
 
 .env-area {
-  position: fixed;
-  width: 100dvw;
+  width: 100%;
   height: env(safe-area-inset-top);
-  top: -env(safe-area-inset-top);
   background-color: var(--css-primary);
 }
 </style>
