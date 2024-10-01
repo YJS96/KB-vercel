@@ -12,16 +12,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, type Ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 interface NavTab {
-  path: string
-  name: string
-  icon: string
+  path: string;
+  name: string;
+  icon: string;
 }
 
-const route = useRoute()
+const route = useRoute();
 
 const navTabs: Ref<NavTab[]> = ref([
   {
@@ -44,21 +44,23 @@ const navTabs: Ref<NavTab[]> = ref([
     name: '계정',
     icon: 'fa-solid fa-user'
   }
-])
+]);
 
 const isActiveTab = (tabPath: string) => {
   if (tabPath === '/') {
-    return route.path === '/'
+    return route.path === '/';
   } else {
-    return route.path.startsWith(tabPath) && 
-          (route.path.length === tabPath.length || route.path[tabPath.length] === '/')
+    return (
+      route.path.startsWith(tabPath) &&
+      (route.path.length === tabPath.length || route.path[tabPath.length] === '/')
+    );
   }
-}
+};
 </script>
 
 <style scoped>
 .navbar-frame {
-  position: absolute;
+  position: fixed;
   padding: 0 4%;
   bottom: 0;
   width: 100%;
