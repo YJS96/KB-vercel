@@ -23,7 +23,6 @@ import {
 import { Button } from '@/components/ui/button';
 
 const themeStore = useThemeStore();
-themeStore.setThemeColor('#FEDE5B');
 
 const showSummaryDetail = ref(false);
 
@@ -74,6 +73,7 @@ onMounted(() => {
   if (audioPlayer.value) {
     audioPlayer.value.src = base64Audio;
   }
+  themeStore.setThemeColor('#FEDE5B');
 });
 </script>
 
