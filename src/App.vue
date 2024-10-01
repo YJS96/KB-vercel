@@ -82,7 +82,7 @@ const rotationStyle = computed(() => ({
 .pull-to-refresh {
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
-  height: 100vh;
+  height: 100dvh;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
