@@ -75,10 +75,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="env-area"></div>
   <NavBar />
   <Toaster />
   <Main :headbar="false" :navbar="true" :padded="true" :bg-gray="true">
+    <div class="env-area"></div>
     <div class="flex justify-between">
       <Button variant="destructive" @click="$router.push('/login')">로그인</Button>
       <Button variant="destructive" @click="$router.push('/pharmacist')">약사</Button>
