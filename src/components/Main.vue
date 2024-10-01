@@ -5,8 +5,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineProps } from 'vue'
-import { useThemeStore } from '@/stores/theme'
+import { computed, defineProps } from 'vue';
+import { useThemeStore } from '@/stores/theme';
 
 const props = defineProps({
   headbar: {
@@ -25,22 +25,22 @@ const props = defineProps({
     type: Boolean,
     default: false
   }
-})
+});
 
-const themeStore = useThemeStore()
-themeStore.setThemeColor(`${props.bgGray ? '#F6F7F6' : '#FDFDFD'}`)
+const themeStore = useThemeStore();
+themeStore.setThemeColor(`${props.bgGray ? '#F6F7F6' : '#FDFDFD'}`);
 
 const mainStyle = computed(() => {
-  let height = '100%'
-  let margin = '0px'
+  let height = '100%';
+  let margin = '0px';
   if (props.headbar && props.navbar) {
-    height = 'calc(100% - 76px - 52px)'
-    margin = '52px'
+    height = 'calc(100% - 76px - 52px)';
+    margin = '52px';
   } else if (!props.headbar && props.navbar) {
-    height = 'calc(100% - 76px)'
+    height = 'calc(100% - 76px)';
   } else if (props.headbar && !props.navbar) {
     height = 'calc(100% - 52px)';
-    margin = '52px'
+    margin = '52px';
   }
 
   return {
@@ -48,8 +48,8 @@ const mainStyle = computed(() => {
     backgroundColor: props.bgGray ? '#F6F7F6' : '#FDFDFD',
     padding: props.padded ? '0 5.13%' : '0',
     height: height
-  }
-})
+  };
+});
 </script>
 
 <style scoped>
@@ -61,6 +61,13 @@ const mainStyle = computed(() => {
   margin-top: 52px;
   overflow-x: hidden;
   overflow-y: scroll;
+  user-select: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.main-frame::webkit-scrollbar {
+  display: none;
 }
 
 .padded {

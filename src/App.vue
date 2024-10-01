@@ -83,7 +83,12 @@ const rotationStyle = computed(() => ({
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   height: 100vh;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
+
+.pull-to-refresh::webkit-scrollbar {
+  display: none;
 
 .pull-to-refresh__indicator {
   position: fixed;
