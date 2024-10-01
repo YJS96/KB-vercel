@@ -275,7 +275,7 @@ onMounted(() => {
   width: 100%;
   background-color: var(--css-primary);
   border-radius: 0 0 16px 16px;
-  padding: 36px 5.13% 5.13%;
+  padding: 36px 5.13% calc(5.13% + 4px);
   display: flex;
   flex-direction: column;
   gap: 24px;
