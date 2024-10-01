@@ -89,6 +89,7 @@ const rotationStyle = computed(() => ({
 
 .pull-to-refresh::webkit-scrollbar {
   display: none;
+}
 
 .pull-to-refresh__indicator {
   position: fixed;
