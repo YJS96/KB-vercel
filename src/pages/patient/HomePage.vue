@@ -75,6 +75,8 @@ onMounted(() => {
 </script>
 
 <template>
+  ]
+  <div class="env-area"></div>
   <NavBar />
   <Toaster />
   <Main :headbar="false" :navbar="true" :padded="true" :bg-gray="true">
@@ -491,5 +493,13 @@ onMounted(() => {
 
 .report-top img.playing {
   transform: scale(1.2);
+}
+
+.env-area {
+  position: fixed;
+  width: 100dvw;
+  height: env(safe-area-inset-top);
+  top: -env(safe-area-inset-top);
+  background-color: var(--css-primary);
 }
 </style>
