@@ -71,6 +71,7 @@ const handleNextClick = () => {
         <Label for="bank-id-input">계좌 번호</Label>
         <Input
           type="text"
+          inputmode="numeric"
           id="bank-id-input"
           v-model="accountNumber"
           placeholder="계좌번호를 입력해주세요."
@@ -81,10 +82,12 @@ const handleNextClick = () => {
         <Label for="bank-password-input">계좌 비밀번호</Label>
         <Input
           type="password"
+          inputmode="numeric"
           id="bank-password-input"
           v-model="accountPassword"
           @input="handlePasswordInput"
           placeholder="(4자리)"
+          maxlength="4"
         />
       </div>
 

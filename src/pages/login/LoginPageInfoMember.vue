@@ -108,7 +108,7 @@ const handleNextButtonClick = () => {
       <Label for="phone-number-input">전화번호</Label>
       <div class="phone-num-tong">
         <Select v-model="phoneCarrier">
-          <SelectTrigger class="w-[80px]">
+          <SelectTrigger class="carrier-select">
             <SelectValue placeholder="통신사" />
           </SelectTrigger>
           <SelectContent>
@@ -121,6 +121,7 @@ const handleNextButtonClick = () => {
         </Select>
         <Input
           type="text"
+          inputmode="numeric"
           id="phone-number-input"
           v-model="phoneNumber"
           placeholder="전화번호를 입력해주세요."
@@ -206,6 +207,11 @@ const handleNextButtonClick = () => {
 .phone-num-tong {
   display: flex;
   gap: 12px;
+}
+
+.carrier-select {
+  width: 80px;
+  min-width: 80px;
 }
 
 .resident-number-container {

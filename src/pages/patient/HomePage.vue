@@ -21,6 +21,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const themeStore = useThemeStore();
 
@@ -78,7 +79,6 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="env-area"></div>
   <NavBar />
   <Toaster />
 
@@ -145,11 +145,11 @@ onMounted(() => {
         <div>아직 조제받지 않은 처방전이 있어요</div>
       </div>
 
-      <!-- <div class="flex justify-between">
-      <Button variant="destructive" @click="$router.push('/login')">로그인</Button>
-      <Button variant="destructive" @click="$router.push('/pharmacist')">약사</Button>
-      <Button variant="destructive" @click="$router.push('/doctor')">의사</Button>
-    </div> -->
+      <div class="flex justify-between">
+        <Button variant="destructive" @click="$router.push('/login')">로그인</Button>
+        <Button variant="destructive" @click="$router.push('/pharmacist')">약사</Button>
+        <Button variant="destructive" @click="$router.push('/doctor')">의사</Button>
+      </div>
 
       <ShadowBox :padding-x="20" :padding-y="20">
         <div class="shadow-box-title">오늘 복용 확인</div>
@@ -228,6 +228,20 @@ onMounted(() => {
               <div class="report-content">
                 1일 3회, 식후 30분에 물과 함께 복용하세요. 3일간 꾸준히 드시고, 증상이 지속되면
                 의사와 상담하세요. 약을 삼키기 어려우면 물에 녹여 드셔도 됩니다.
+              </div>
+            </div>
+
+            <div>
+              <div class="report-title-load">
+                <Skeleton class="report-icon-load" />
+                <div class="space-y-1">
+                  <Skeleton class="h-4 w-[120px]" />
+                  <Skeleton class="h-4 w-[200px]" />
+                </div>
+              </div>
+              <div class="report-content-load">
+                <Skeleton class="h-4 w-[300px]"> </Skeleton>
+                <Skeleton class="h-4 w-[300px]"> </Skeleton>
               </div>
             </div>
           </div>
@@ -418,7 +432,7 @@ onMounted(() => {
 .tab-select-container {
   display: flex;
   margin: 16px 0;
-  width: calc(100% + 20px);
+  width: 100%;
   gap: 8px;
   overflow-x: scroll;
   white-space: nowrap;
@@ -468,13 +482,35 @@ onMounted(() => {
   margin-right: 8px;
 }
 
+.report-icon-load {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 8px;
+}
+
 .report-title {
   font-size: 16px;
   font-weight: 600;
 }
 
+.report-title-load {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .report-content {
   font-size: 15px;
+}
+
+.report-content-load {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .middot {

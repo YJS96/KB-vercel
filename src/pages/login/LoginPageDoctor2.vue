@@ -46,9 +46,11 @@ const handleNextButtonClick = () => {
         <div class="license-container">
           <Input
             type="text"
+            inputmode="numeric"
             id="doctor-license"
             v-model="licenseNumber"
             placeholder="면허 번호 입력하세요"
+            maxlength="6"
           ></Input>
           <Button @click="verifyLicense" :disabled="isLicenseVerified">등록하기</Button>
           <CheckCircle2 v-if="isLicenseVerified" class="text-yellow-500" />
@@ -69,9 +71,11 @@ const handleNextButtonClick = () => {
         <Label for="hospital-tel">병원 연락처</Label>
         <Input
           type="text"
+          inputmode="numeric"
           id="hospital-tel"
           v-model="hospitalPhone"
           placeholder="ex) 021234567"
+          maxlength="11"
         ></Input>
       </div>
     </div>
