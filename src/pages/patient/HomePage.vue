@@ -498,5 +498,6 @@ onMounted(() => {
   width: 100%;
   height: env(safe-area-inset-top);
   background-color: var(--css-primary);
+  border: 1px black solid;
 }
 </style>
