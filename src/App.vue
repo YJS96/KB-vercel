@@ -55,27 +55,7 @@ const rotationStyle = computed(() => ({
 </script>
 
 <template>
-  <div
-    class="pull-to-refresh"
-    @touchstart="onTouchStart"
-    @touchmove="onTouchMove"
-    @touchend="onTouchEnd"
-  >
-    <div class="pull-to-refresh__indicator" :style="{ height: `${pullDistance / 1.6}px` }">
-      <div v-if="!showRefreshingMessage">
-        <i class="fa-solid fa-arrow-up" :style="rotationStyle"></i>
-        {{ isOverThreshold ? '놓아서 새로고침' : '당겨서 새로고침' }}
-      </div>
-      <div v-else class="refreshing-message">
-        <div class="spinner"></div>
-        <span>새로고침 중</span>
-      </div>
-    </div>
-    <div class="content">
-      <!-- <NavBar /> -->
-      <RouterView />
-    </div>
-  </div>
+  <RouterView />
 </template>
 
 <style scoped>
