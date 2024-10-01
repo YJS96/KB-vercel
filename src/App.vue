@@ -71,7 +71,7 @@ const rotationStyle = computed(() => ({
         <span>새로고침 중</span>
       </div>
     </div>
-    <div class="content" :style="{ marginTop: showRefreshingMessage ? '32px' : '0' }">
+    <div class="content">
       <!-- <NavBar /> -->
       <RouterView />
     </div>
