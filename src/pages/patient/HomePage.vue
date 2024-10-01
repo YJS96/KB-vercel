@@ -75,7 +75,6 @@ onMounted(() => {
 </script>
 
 <template>
-  ]
   <div class="env-area"></div>
   <NavBar />
   <Toaster />
