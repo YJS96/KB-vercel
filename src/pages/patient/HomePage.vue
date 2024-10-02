@@ -25,7 +25,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const themeStore = useThemeStore();
 
-const showSummaryDetail = ref(false);
+const showSummaryDetail = ref(true);
+// 임시
+const isLoaded = ref(false);
+
+setTimeout(() => {
+  isLoaded.value = true;
+}, 2000);
 
 const handleSummaryDetail = () => {
   showSummaryDetail.value = !showSummaryDetail.value;
@@ -76,6 +82,33 @@ onMounted(() => {
   }
   themeStore.setThemeColor('#FEDE5B');
 });
+
+// axios Examples
+// https://jsonplaceholder.typicode.com/
+import axiosInstance from '@/api/instance';
+
+const todoExample = ref(null);
+
+const getTodoExample = async (idx: number) => {
+  try {
+    const response = await axiosInstance.get(`todos/${idx}`);
+    todoExample.value = response.data.data;
+  } catch (err) {
+    console.log(err);
+  }
+};
+getTodoExample(7);
+
+// example 2
+import getTodoExampleTwo from '@/api/apiExample';
+
+const todoExampleTwo = ref(null);
+
+const fetchTodo = async (id: number) => {
+  todoExampleTwo.value = await getTodoExampleTwo(id);
+};
+
+fetchTodo(7);
 </script>
 
 <template>
@@ -150,7 +183,8 @@ onMounted(() => {
         <Button variant="destructive" @click="$router.push('/pharmacist')">약사</Button>
         <Button variant="destructive" @click="$router.push('/doctor')">의사</Button>
       </div>
-
+      <div></div>
+      <div></div>
       <ShadowBox :padding-x="20" :padding-y="20">
         <div class="shadow-box-title">오늘 복용 확인</div>
         <div class="daily-check-container">
@@ -207,7 +241,7 @@ onMounted(() => {
                 >{{ tab.name }}</span
               >
             </div>
-            <div>
+            <div v-if="isLoaded">
               <div class="report-top">
                 <div class="flex">
                   <div class="report-icon">
@@ -231,17 +265,17 @@ onMounted(() => {
               </div>
             </div>
 
-            <div>
+            <div v-else>
               <div class="report-title-load">
                 <Skeleton class="report-icon-load" />
-                <div class="space-y-1">
-                  <Skeleton class="h-4 w-[120px]" />
-                  <Skeleton class="h-4 w-[200px]" />
+                <div class="flex flex-col gap-1">
+                  <Skeleton class="h-4 w-[124px]" />
+                  <Skeleton class="h-4 w-[124px]" />
                 </div>
               </div>
               <div class="report-content-load">
-                <Skeleton class="h-4 w-[300px]"> </Skeleton>
-                <Skeleton class="h-4 w-[300px]"> </Skeleton>
+                <Skeleton class="h-4 w-full"> </Skeleton>
+                <Skeleton class="h-4 w-full"> </Skeleton>
               </div>
             </div>
           </div>
@@ -372,7 +406,7 @@ onMounted(() => {
 }
 
 .bottom-half {
-  padding: 0 5.13%;
+  padding: 0 5.13% 40px;
   height: calc(100% - 236px);
   overflow-y: scroll;
   /* padding-top: 20px; */
@@ -486,9 +520,6 @@ onMounted(() => {
   width: 44px;
   height: 44px;
   border-radius: 6px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin-right: 8px;
 }
 
