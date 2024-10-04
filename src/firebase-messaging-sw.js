@@ -2,13 +2,13 @@ importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FCM_API,
-  authDomain: import.meta.env.VITE_FCM_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_SENDER_ID,
-  appId: import.meta.env.VITE_APP_ID,
-  measurementId: import.meta.env.VITE_MEASURE_ID
+  apiKey: 'AIzaSyAmE7eesdl5WLVKN-xoQD5JUcH4Vf1ex4s',
+  authDomain: 'kbank-backend.firebaseapp.com',
+  projectId: 'kbank-backend',
+  storageBucket: 'kbank-backend.appspot.com',
+  messagingSenderId: '505325744639',
+  appId: '1:505325744639:web:04843f09853629d93437ca',
+  measurementId: 'G-P4BPZ9LN1Y'
 };
 
 firebase.initializeApp(firebaseConfig);

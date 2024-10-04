@@ -2,13 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FCM_API,
-  authDomain: import.meta.env.VITE_FCM_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_SENDER_ID,
-  appId: import.meta.env.VITE_APP_ID,
-  measurementId: import.meta.env.VITE_MEASURE_ID
+  apiKey: 'AIzaSyAmE7eesdl5WLVKN-xoQD5JUcH4Vf1ex4s',
+  authDomain: 'kbank-backend.firebaseapp.com',
+  projectId: 'kbank-backend',
+  storageBucket: 'kbank-backend.appspot.com',
+  messagingSenderId: '505325744639',
+  appId: '1:505325744639:web:04843f09853629d93437ca',
+  measurementId: 'G-P4BPZ9LN1Y'
 };
 
 const app = initializeApp(firebaseConfig);
@@ -19,7 +19,8 @@ export { app, messaging };
 export const requestForToken = async () => {
   try {
     const currentToken = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_VAPID
+      vapidKey:
+        'BNCnOqfdBm_KSYG37G7TRtXeXU3TqZybnY9so-jIq3VIf37dVJRJrkveugdXGE8AVnsWTE3wVZ1Ic3Dzcoc8KPM'
     });
     if (currentToken) {
       console.log('current token for client: ', currentToken);
