@@ -52,8 +52,7 @@ const tabs = ref([
   { id: 2, name: '병원이름 2' },
   { id: 3, name: '병원이름 3' },
   { id: 4, name: '병원이름 4' },
-  { id: 5, name: '병원이름 5' },
-  { id: 6, name: '병원이름 6' },
+  { id: 5, name: '병원이름 5' }
 ]);
 
 const selectedTabId = ref(1);

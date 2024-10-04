@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { isSupported } from 'firebase/messaging';
+import { app as firebaseApp, requestForToken, onMessageListener } from '../../firebase';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
@@ -6,9 +9,6 @@ import ShadowBox from '@/components/ShadowBox.vue';
 import { useMealTimeStore } from '@/stores/mealtime';
 import {
   Dialog,
-  // DialogHeader,
-  // DialogDescription,
-  // DialogTitle,
   DialogContent,
   DialogFooter,
   DialogClose,
@@ -16,13 +16,14 @@ import {
 } from '@/components/ui/dialog';
 import Button from '@/components/ui/button/Button.vue';
 import TimeSelector from '@/components/TimeSelector.vue';
-import { onMounted, ref } from 'vue';
 
 const mealTimeStore = useMealTimeStore();
 
 const breakfastTime = ref(mealTimeStore.breakfast);
 const lunchTime = ref(mealTimeStore.lunch);
 const dinnerTime = ref(mealTimeStore.dinner);
+
+const fcmToken = ref<string | null>(null);
 
 const updateMealTimes = () => {
   mealTimeStore.updateAllMealTimes({
@@ -32,10 +33,45 @@ const updateMealTimes = () => {
   });
 };
 
+const requestNotificationPermission = async () => {
+  try {
+    const isFirebaseMessagingSupported = await isSupported();
+    if (!isFirebaseMessagingSupported) {
+      console.log('이 브라우저는 Firebase 클라우드 메시징을 지원하지 않습니다.');
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      const token = await requestForToken();
+      if (token) {
+        fcmToken.value = token;
+        console.log('FCM 토큰:', token);
+        // 여기서 토큰을 서버로 전송하거나 저장하는 로직을 추가할 수 있습니다.
+      }
+    } else if (permission === 'denied') {
+      console.log('알림 권한이 거부되었습니다. 브라우저 설정에서 권한을 허용해주세요.');
+      // 사용자에게 브라우저 설정에서 권한을 허용하도록 안내하는 메시지를 표시
+    } else {
+      console.log('알림 권한 요청에 대한 응답을 받지 못했습니다.');
+    }
+  } catch (error) {
+    console.error('알림 권한을 얻는데 실패했습니다:', error);
+  }
+};
+
 onMounted(() => {
   breakfastTime.value = mealTimeStore.breakfast;
   lunchTime.value = mealTimeStore.lunch;
   dinnerTime.value = mealTimeStore.dinner;
+
+  // 포그라운드 메시지 리스너 설정
+  onMessageListener()
+    .then((payload: any) => {
+      console.log('Received message while app is in foreground:', payload);
+      // 여기에서 알림을 표시하거나 앱 UI를 업데이트하는 로직을 추가할 수 있습니다.
+    })
+    .catch((err: any) => console.log('Failed to receive foreground message:', err));
 });
 </script>
 
@@ -61,7 +97,7 @@ onMounted(() => {
       </div>
     </ShadowBox>
     <ShadowBox :padding-x="24" :padding-y="20" :radius="false">
-      <div class="settings-title">내 계좌 정보</div>
+      <div class="settings-title">복약 알림 설정</div>
       <div class="settings-frame">
         <div class="settings-row">
           <div class="settings-key">아침</div>
@@ -83,14 +119,9 @@ onMounted(() => {
             </div>
           </DialogTrigger>
           <DialogContent>
-            <!-- <DialogHeader>
-              <DialogTitle>복약 시간 수정</DialogTitle>
-              <DialogDescription>알림 받을 시간을 설정해주세요</DialogDescription>
-            </DialogHeader> -->
             <TimeSelector title="아침" v-model="breakfastTime" />
             <TimeSelector title="점심" v-model="lunchTime" />
             <TimeSelector title="저녁" v-model="dinnerTime" />
-
             <DialogFooter class="modal-footer">
               <DialogClose>
                 <Button size="lg" @click="updateMealTimes">저장</Button>
@@ -105,6 +136,10 @@ onMounted(() => {
     </ShadowBox>
     <ShadowBox :padding-x="24" :padding-y="20" :radius="false">
       <div class="settings-frame">
+        <div class="settings-row">
+          <div class="settings-key">알림 권한 설정</div>
+          <Button @click="requestNotificationPermission">알림 권한 요청</Button>
+        </div>
         <div class="settings-row">
           <div class="settings-key logout">로그아웃</div>
         </div>

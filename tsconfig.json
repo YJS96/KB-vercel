@@ -7,5 +7,13 @@
     {
       "path": "./tsconfig.app.json"
     }
+  ],
+  "compilerOptions": {
+    // 기존 설정...
+    "lib": ["ESNext", "DOM", "WebWorker"]
+  },
+  "include": [
+    // 기존 include...
+    "src/firebase-messaging-sw.ts"
   ]
 }
