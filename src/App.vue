@@ -96,3 +96,59 @@ onMessageListener()
   </div>
   <Toaster />
 </template>
+
+<style scoped>
+.pull-to-refresh {
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  height: 100vh;
+}
+
+.pull-to-refresh__indicator {
+  position: fixed;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.15s ease;
+  z-index: 999;
+  top: 0 !important;
+}
+
+.content {
+  transition: margin-top 0.2s ease;
+}
+
+i {
+  margin-right: 4px;
+}
+
+.refreshing-message {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  top: 16px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--white);
+  border-top: 2px solid var(--dark-gray);
+  border-radius: 100px;
+  animation: spin 1s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
