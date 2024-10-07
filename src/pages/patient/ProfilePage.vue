@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { isSupported } from 'firebase/messaging';
-import { app as firebaseApp, requestForToken, onMessageListener } from '../../firebase';
+import { app as firebaseApp, requestForToken, onMessageListener } from '@/firebase';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
+import NotificationConsent from '@/components/NotificationConsent.vue';
 import { useMealTimeStore } from '@/stores/mealtime';
 import {
   Dialog,
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import Button from '@/components/ui/button/Button.vue';
 import TimeSelector from '@/components/TimeSelector.vue';
+import axiosInstance from '@/api/instance'
 
 const mealTimeStore = useMealTimeStore();
 
@@ -46,8 +48,27 @@ const requestNotificationPermission = async () => {
       const token = await requestForToken();
       if (token) {
         fcmToken.value = token;
-        console.log('FCM 토큰:', token);
-        // 여기서 토큰을 서버로 전송하거나 저장하는 로직을 추가할 수 있습니다.
+        // console.log('FCM 토큰:', token);
+        //  // 서버로 토큰 전송
+        //  await fetch('http://localhost:8080/api/fcm/save/token?userId=1', {
+        //   method: 'POST',
+        //   headers: {
+        //     'Content-Type': 'application/json',
+        //   },
+        //   body: JSON.stringify({
+        //     fcmNo: token,
+        //   }),
+        // });
+        // console.log('토큰이 서버로 전송되었습니다.');
+        const patchToken = {
+          fcmNo : token
+        }
+        try {
+          const response = await axiosInstance.patch('api/fcm/save/token?userId=1', patchToken)
+          console.log(response)
+        } catch (err) {
+          console.log(err)
+        }
       }
     } else if (permission === 'denied') {
       console.log('알림 권한이 거부되었습니다. 브라우저 설정에서 권한을 허용해주세요.');
@@ -59,20 +80,6 @@ const requestNotificationPermission = async () => {
     console.error('알림 권한을 얻는데 실패했습니다:', error);
   }
 };
-
-onMounted(() => {
-  breakfastTime.value = mealTimeStore.breakfast;
-  lunchTime.value = mealTimeStore.lunch;
-  dinnerTime.value = mealTimeStore.dinner;
-
-  // 포그라운드 메시지 리스너 설정
-  onMessageListener()
-    .then((payload: any) => {
-      console.log('Received message while app is in foreground:', payload);
-      // 여기에서 알림을 표시하거나 앱 UI를 업데이트하는 로직을 추가할 수 있습니다.
-    })
-    .catch((err: any) => console.log('Failed to receive foreground message:', err));
-});
 </script>
 
 <template>
@@ -135,11 +142,16 @@ onMounted(() => {
       </div>
     </ShadowBox>
     <ShadowBox :padding-x="24" :padding-y="20" :radius="false">
+      <div class="settings-title">알림 설정</div>
       <div class="settings-frame">
         <div class="settings-row">
-          <div class="settings-key">알림 권한 설정</div>
-          <Button @click="requestNotificationPermission">알림 권한 요청</Button>
+          <div class="settings-key">알림 수신 동의</div>
+          <NotificationConsent />
         </div>
+      </div>
+    </ShadowBox>
+    <ShadowBox :padding-x="24" :padding-y="20" :radius="false">
+      <div class="settings-frame">
         <div class="settings-row">
           <div class="settings-key logout">로그아웃</div>
         </div>

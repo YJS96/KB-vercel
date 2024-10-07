@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, provide } from 'vue';
 import { useRouter } from 'vue-router';
+import { app as firebaseApp, requestForToken, onMessageListener } from '@/firebase';
+import { isSupported } from 'firebase/messaging';
+import { Toaster, toast } from '@steveyuowo/vue-hot-toast';
 
 const router = useRouter();
 const threshold = 176; // 새로고침을 트리거하는 당김 거리 (픽셀)
@@ -9,7 +12,17 @@ const startY = ref(0);
 const isRefreshing = ref(false);
 const showRefreshingMessage = ref(false);
 
-// const emit = defineEmits(['refresh']);
+// FCM 토큰 상태 관리
+const fcmToken = ref<string | null>(null);
+provide('fcmToken', fcmToken);
+
+// 푸시 알림 리스너 설정
+onMessageListener()
+  .then((payload: any) => {
+    toast.success(payload.notification.title);
+    // 필요한 경우 알림 클릭 시 특정 페이지로 이동하는 로직 추가 가능
+  })
+  .catch((err: Error) => console.error('포그라운드 메시지 수신 실패:', err));
 
 const onTouchStart = (e: TouchEvent) => {
   if (!isRefreshing.value) {
@@ -34,14 +47,11 @@ const onTouchEnd = () => {
 
 const startRefresh = () => {
   isRefreshing.value = true;
-  pullDistance.value = threshold; // 인디케이터를 완전히 펼친 상태로 유지
+  pullDistance.value = threshold;
   setTimeout(() => {
     showRefreshingMessage.value = true;
     setTimeout(() => {
       router.go(0);
-      // emit('refresh');
-      // isRefreshing.value = false;
-      // showRefreshingMessage.value = false;
       pullDistance.value = 0;
     }, 350);
   }, 0);
@@ -52,9 +62,18 @@ const rotationStyle = computed(() => ({
   transform: `rotate(${isOverThreshold.value ? 180 : 0}deg)`,
   transition: 'transform 0.3s ease'
 }));
+
+// 포그라운드 메시지 리스너 설정
+onMessageListener()
+  .then((payload: any) => {
+    console.log('Received message while app is in foreground:', payload);
+    // 여기에서 알림을 표시하거나 앱 UI를 업데이트하는 로직을 추가할 수 있습니다.
+  })
+  .catch((err: any) => console.log('Failed to receive foreground message:', err));
 </script>
 
 <template>
+  <Toaster />
   <div
     class="pull-to-refresh"
     @touchstart="onTouchStart"
@@ -72,64 +91,8 @@ const rotationStyle = computed(() => ({
       </div>
     </div>
     <div class="content">
-      <!-- <NavBar /> -->
       <RouterView />
     </div>
   </div>
+  <Toaster />
 </template>
-
-<style scoped>
-.pull-to-refresh {
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  height: 100vh;
-}
-
-.pull-to-refresh__indicator {
-  position: fixed;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 0;
-  overflow: hidden;
-  transition: height 0.15s ease;
-  z-index: 999;
-  top: 0 !important;
-}
-
-.content {
-  transition: margin-top 0.2s ease;
-}
-
-i {
-  margin-right: 4px;
-}
-
-.refreshing-message {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  top: 16px;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--white);
-  border-top: 2px solid var(--dark-gray);
-  border-radius: 100px;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-</style>
