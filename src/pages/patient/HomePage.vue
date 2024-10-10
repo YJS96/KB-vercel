@@ -179,7 +179,7 @@ const getReport = async (id: number) => {
     });
 };
 
-const medicineIntake = ref<MedicineIntake[]>();
+const medicineIntake = ref<MedicineIntake[]>([]);
 const injectionIntake = ref<InjectionIntake[]>();
 
 const getIntake = async () => {
@@ -256,7 +256,7 @@ const getRecent = async () => {
       .filter((prescription: Prescription) => prescription.prescriptionSt === true)
       .slice(0, 5);
     getReport(data[0].prescriptionPk);
-    console.log(reportPrescriptions.value);
+    // console.log(reportPrescriptions.value);
   } catch (err) {
     console.log(err);
   }
