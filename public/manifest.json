@@ -5,8 +5,8 @@
   "scope": "/",
   "id": "/",
   "start_url": "/",
-  "name": "서비스명",
-  "short_name": "서비스명",
+  "name": "방갑다",
+  "short_name": "방갑다",
   "orientation": "portrait",
   "icons": [
     {

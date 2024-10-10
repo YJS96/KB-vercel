@@ -3,14 +3,15 @@ import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 import { toast } from '@steveyuowo/vue-hot-toast';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyAmE7eesdl5WLVKN-xoQD5JUcH4Vf1ex4s',
-  authDomain: 'kbank-backend.firebaseapp.com',
-  projectId: 'kbank-backend',
-  storageBucket: 'kbank-backend.appspot.com',
-  messagingSenderId: '505325744639',
-  appId: '1:505325744639:web:04843f09853629d93437ca',
-  measurementId: 'G-P4BPZ9LN1Y'
+  apiKey: "AIzaSyAmE7eesdl5WLVKN-xoQD5JUcH4Vf1ex4s",
+  authDomain: "kbank-backend.firebaseapp.com",
+  projectId: "kbank-backend",
+  storageBucket: "kbank-backend.appspot.com",
+  messagingSenderId: "505325744639",
+  appId: "1:505325744639:web:04843f09853629d93437ca",
+  measurementId: "G-P4BPZ9LN1Y"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
@@ -30,6 +31,7 @@ export const requestForToken = async (): Promise<string | null> => {
     } else {
       alert('발급 실패');
       console.log('No registration token available. Request permission to generate one.');
+      return null;
     }
   } catch (err) {
     console.error('토큰 검색 중 오류 발생:', err);
@@ -52,7 +54,7 @@ export const onMessageListener = () =>
         // 알림 표시
         new Notification(notificationTitle, notificationOptions);
         // @ts-ignore
-        toast.success(notificationOptions?.body);
+        toast.success(notificationOptions?.body ?? '새로운 메시지가 도착했습니다');
       }
 
       resolve(payload);

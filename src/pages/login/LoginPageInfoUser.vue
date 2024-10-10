@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSignupStore } from '@/stores/signupStore';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import { Button } from '@/components/ui/button';
 
+// 은행 목록 데이터 (로컬에서 관리)
 const banks = [
   { name: '국민은행', img: '/images/banks/kb-bank.png' },
   { name: '신한은행', img: '/images/banks/shinhan-bank.png' },
@@ -14,21 +16,30 @@ const banks = [
   { name: '기업은행', img: '/images/banks/ibk-bank.png' }
 ];
 
-const selectedBank = ref<{ name: string; img: string } | null>(null);
+// Vue Router와 Signup 스토어 인스턴스를 생성합니다.
 const router = useRouter();
+const signupStore = useSignupStore();
 
+// 선택된 은행을 저장하는 반응형 변수를 생성합니다.
+const selectedBank = ref<{ name: string; img: string } | null>(null);
+
+// 은행을 선택하는 함수를 정의합니다.
 const selectBank = (bank: { name: string; img: string }) => {
   selectedBank.value = bank;
 };
 
-const handleNextButtonClick = () => {
+// '다음' 버튼 클릭 핸들러를 정의합니다.
+const handleNextButtonClick = async () => {
   if (selectedBank.value) {
+    // 선택된 은행 정보를 Pinia 스토어에 저장합니다.
+    signupStore.setUserInfo({
+      patientInfo: { bankName: selectedBank.value.name }
+    });
+
+    // 다음 페이지로 이동하며, 은행 이미지 정보를 쿼리 파라미터로 전달합니다.
     router.push({
       path: '/login/bank_id',
-      query: {
-        bankName: selectedBank.value.name,
-        bankImg: selectedBank.value.img
-      }
+      query: { bankImg: selectedBank.value.img }
     });
   }
 };
@@ -100,15 +111,10 @@ const handleNextButtonClick = () => {
   height: 100px;
   gap: 8px;
   cursor: pointer;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .bank-icon {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   width: 52px;
   height: 52px;
 }
@@ -118,20 +124,6 @@ const handleNextButtonClick = () => {
   justify-content: center;
   align-items: center;
   margin-top: 40px;
-}
-
-.bank-list {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8%;
-  border: 1px solid var(--gray);
-  width: 30%;
-  height: 100px;
-  gap: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
 .bank-list.selected {
@@ -145,9 +137,7 @@ const handleNextButtonClick = () => {
   right: 5.13%;
   bottom: 80px;
   position: absolute;
-  transition:
-    background-color 0.3s ease,
-    color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .next-button:not(:disabled):hover {

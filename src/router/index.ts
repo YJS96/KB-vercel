@@ -17,6 +17,7 @@ import PharmacistPage from '@/pages/pharmacist/PharmacistPage.vue';
 import PharmacistPageScanPayment from '@/pages/pharmacist/PharmacistPageScanPayment.vue';
 import DoctorPage from '@/pages/doctor/DoctorPage.vue';
 import DoctorFinalCheck from '@/pages/doctor/DoctorFinalCheck.vue';
+import LoginPagePharmacist2 from '@/pages/login/LoginPagePharmacist2.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -75,6 +76,11 @@ const router = createRouter({
       path: '/login/pharmacist',
       name: '/LoginPagePharmacist',
       component: LoginPagePharmacist
+    },
+    {
+      path: '/login/pharmacist/license',
+      name: '/LoginPagePharmacist2',
+      component: LoginPagePharmacist2
     },
     {
       path: '/success',

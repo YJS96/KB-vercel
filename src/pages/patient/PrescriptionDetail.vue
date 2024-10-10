@@ -62,6 +62,7 @@ const prescDetail = [
   }
 ];
 
+
 const claimRequested = ref(false);
 const medicineReceived = ref(false);
 

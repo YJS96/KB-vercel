@@ -13,6 +13,32 @@ import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 import Badge from '@/components/Badge.vue';
 import { Button } from '@/components/ui/button';
+import axiosInstance from '@/api/instance';
+import { toast } from '@steveyuowo/vue-hot-toast';
+
+
+interface medicineIntake  {
+  medInkPk : Number;
+  meal : string;
+  day : [];
+  eatSt : boolean;
+  userId : Number;
+  medicineId : Number;
+  intakeCnt : Number;
+  medicineNm : string;
+  caution : string;
+}
+
+interface injectionIntake {
+  injInkPk : Number;
+  meal : string;
+  eatSt : boolean;
+  day : [];
+  userId : Number;
+  injectionId : Number;
+  injectionNm : string;
+  sideEffect : string;
+}
 
 const medicationStore = useMedicationStore();
 const mealTimeStore = useMealTimeStore();
@@ -21,6 +47,28 @@ const themeStore = useThemeStore();
 setTimeout(() => {
   themeStore.setThemeColor('#FDFDFD');
 }, 10);
+
+const time: Record<"ANYTIME" | "BREAKFAST" | "LUNCH" | "DINNER", string> = {
+  "ANYTIME": "매 식사마다",
+  "BREAKFAST": "아침",
+  "LUNCH": "점심",
+  "DINNER": "저녁"
+};
+
+
+const getTimeValue = (key: keyof typeof time): string => {
+  return time[key] || "";
+};
+
+
+const timeBA: Record<"AFTER" | "BEFORE", string> = {
+  "AFTER" : "식사 후",
+  "BEFORE" : "식사 전"
+}
+
+const getBAValue = (key: keyof typeof timeBA) :string => {
+  return timeBA[key] || "";
+};
 
 moment.locale('ko');
 const today = moment();
@@ -37,6 +85,7 @@ const dateRange = computed(() => {
 
 const selectDate = (date: moment.Moment) => {
   selectedDate.value = date;
+  getIntake(date.format('YYYY-MM-DD'));
 };
 
 const isSelected = (date: moment.Moment) => {
@@ -56,6 +105,75 @@ const getKoreanWeekday = (date: moment.Moment): string => {
   return weekdays[date.day()];
 };
 
+const medicineIntakeList = ref();
+const injectionIntakeList = ref();
+
+const getIntake = async(date : string) => {
+  await axiosInstance.get(`/api/medi/taking/list?userId=1&date=${date}`)
+  .then(res => {
+    medicineIntakeList.value = res.data.data.medicineIntakeList;
+  }).catch(err => {
+    console.log(err);
+  })
+
+  await axiosInstance.get(`/api/inj/taking/list?userId=1&date=${date}`)
+  .then(res => {
+    injectionIntakeList.value = res.data.data.injectionIntakeList;
+  }).catch(err => {
+    console.log(err);
+  })
+}
+
+const toggleMediEatSt = async(id:number, st:boolean) => {
+  try {
+    const index = medicineIntakeList.value.findIndex((item:medicineIntake) => item.medInkPk === id);
+
+    if(today.format('YYYY-MM-DD') !== medicineIntakeList.value[index].day.map((num: Number) => String(num).padStart(2, '0')).join('-')){
+      toast.error('다른 날짜는 처리할 수 없습니다.');
+      return;
+    }
+
+    const response = await axiosInstance.patch(`/api/medi/taking/comp/${id}?userId=1`);
+    
+    if (index !== -1) {
+      medicineIntakeList.value[index].eatSt = !medicineIntakeList.value[index].eatSt; // 업데이트된 데이터로 교체
+    }
+
+    if (!st) {
+        toast.success(`약 복용 확인하였습니다`);
+      } else {
+        toast.error(`약 복용 취소하였습니다`);
+      }
+  } catch(err) {
+    console.log(err);
+  }
+}
+
+const toggleInjEatSt = async(id:number, st:boolean) => {
+  try {
+    const index = injectionIntakeList.value.findIndex((item:injectionIntake) => item.injInkPk === id);
+
+    if(today.format('YYYY-MM-DD') !== injectionIntakeList.value[index].day.map((num: Number) => String(num).padStart(2, '0')).join('-')){
+      toast.error('다른 날짜는 처리할 수 없습니다.');
+      return;
+    }
+
+    const response = await axiosInstance.patch(`/api/inj/taking/comp/${id}?userId=1`);
+    
+    if (index !== -1) {
+      injectionIntakeList.value[index].eatSt = !injectionIntakeList.value[index].eatSt; // 업데이트된 데이터로 교체
+    }
+
+    if (!st) {
+        toast.success(`약 복용 확인하였습니다`);
+      } else {
+        toast.error(`약 복용 취소하였습니다`);
+      }
+  } catch(err) {
+    console.log(err);
+  }
+}
+
 onMounted(() => {
   if (calendarContainer.value) {
     const tomorrowElement = calendarContainer.value.querySelector('.day-frame:nth-child(15)');
@@ -66,7 +184,13 @@ onMounted(() => {
       calendarContainer.value.scrollLeft = scrollPosition;
     }
   }
+  getIntake(today.format('YYYY-MM-DD'));
 });
+
+
+
+
+
 </script>
 
 <template>
@@ -87,97 +211,136 @@ onMounted(() => {
         <span class="day" :class="{ isSelected: isSelected(date) }">{{ date.format('D') }}</span>
       </div>
     </div>
-    <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+
+<!-- 약 -->
+    <ShadowBox v-for="intake in medicineIntakeList" :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
       <div class="day-alert-top">
         <div class="meal-and-time">
-          <span class="meal">아침</span>
+          <span class="meal">{{getTimeValue(intake.meal)}}</span>
           <span class="meal-time">{{ mealTimeStore.breakfast }}</span>
         </div>
         <Button
-          :variant="medicationStore.morning ? 'destructive' : 'default'"
-          @click="medicationStore.toggleMedication('morning')"
-          >{{ medicationStore.morning ? '취소' : '확인' }}</Button
-        >
+          :variant="(intake.eatSt) ? 'destructive' : 'default'"
+          @click="toggleMediEatSt(intake.medInkPk, intake.eatSt)"
+          >{{ intake.eatSt ? '취소' : '확인' }}
+        </Button>
       </div>
       <div class="medicine-list">
-        <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+
+        <div class="medicine-info-frame" @click="$router.push(`/medicine/${intake.medicineId}`)">
           <div class="medicine-info-left">
             <div class="medicine-icon-name">
-              <div class="medicine-icon">
-                <!-- 아이콘 들어갈 자리 -->
-              </div>
-              <span class="medicine-name">코푸정</span>
+              <div class="medicine-icon"></div>
+              <span class="medicine-name">{{ intake.medicineNm }}</span>
             </div>
             <div class="medicine-badge-frame">
-              <Badge>졸음</Badge>
-              <Badge>어지러움</Badge>
+              <Badge v-for="c in intake.caution.split(',')">{{ c }}</Badge>
             </div>
           </div>
-          <span class="medicine-intake">1정</span>
+          <span class="medicine-intake">{{ intake.intakeCnt }}정</span>
         </div>
+
       </div>
     </ShadowBox>
-    <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+
+<!-- 여기부턴 주사제임 -->
+    <ShadowBox v-for="intake in injectionIntakeList" :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
       <div class="day-alert-top">
         <div class="meal-and-time">
-          <span class="meal">점심</span>
-          <span class="meal-time">{{ mealTimeStore.lunch }}</span>
+          <span class="meal">{{getTimeValue(intake.meal)}}</span>
+          <span class="meal-time">{{ mealTimeStore.breakfast }}</span>
         </div>
         <Button
-          :variant="medicationStore.afternoon ? 'destructive' : 'default'"
-          @click="medicationStore.toggleMedication('afternoon')"
-          >{{ medicationStore.afternoon ? '취소' : '확인' }}</Button
-        >
+          :variant="(intake.eatSt) ? 'destructive' : 'default'"
+          @click="toggleInjEatSt(intake.injInkPk, intake.eatSt)"
+          >{{ intake.eatSt ? '취소' : '확인' }}
+        </Button>
       </div>
       <div class="medicine-list">
-        <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+
+        <div class="medicine-info-frame" @click="$router.push(`/injection/${intake.injectionId}`)">
           <div class="medicine-info-left">
             <div class="medicine-icon-name">
-              <div class="medicine-icon">
-                <!-- 아이콘 들어갈 자리 -->
-              </div>
-              <span class="medicine-name">코푸정</span>
+              <div class="medicine-icon"></div>
+              <span class="medicine-name">{{ intake.injectionNm }}</span>
             </div>
             <div class="medicine-badge-frame">
-              <Badge>졸음</Badge>
-              <Badge>어지러움</Badge>
+              <Badge v-for="c in (intake.sideEffect ? intake.sideEffect.split(',').filter(Boolean) : [])" :key="c">
+                {{ c }}
+              </Badge>
             </div>
           </div>
-          <span class="medicine-intake">1정</span>
+          <!-- <span class="medicine-intake">{{ intake.intakeCnt }}회</span> -->
         </div>
+
       </div>
     </ShadowBox>
-    <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
-      <div class="day-alert-top">
-        <div class="meal-and-time">
-          <span class="meal">저녁</span>
-          <span class="meal-time">{{ mealTimeStore.dinner }}</span>
-        </div>
-        <Button
-          :variant="medicationStore.evening ? 'destructive' : 'default'"
-          @click="medicationStore.toggleMedication('evening')"
-          >{{ medicationStore.evening ? '취소' : '확인' }}</Button
-        >
+
+
+<!-- 
+
+  <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+    <div class="day-alert-top">
+      <div class="meal-and-time">
+        <span class="meal">점심</span>
+        <span class="meal-time">{{ mealTimeStore.lunch }}</span>
       </div>
-      <div class="medicine-list">
-        <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
-          <div class="medicine-info-left">
-            <div class="medicine-icon-name">
-              <div class="medicine-icon">
-                <!-- 아이콘 들어갈 자리 -->
-              </div>
-              <span class="medicine-name">코푸정</span>
+      <Button
+      :variant="medicationStore.afternoon ? 'destructive' : 'default'"
+      @click="medicationStore.toggleMedication('afternoon')"
+      >{{ medicationStore.afternoon ? '취소' : '확인' }}</Button
+      >
+    </div>
+    <div class="medicine-list">
+      <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+        <div class="medicine-info-left">
+          <div class="medicine-icon-name">
+            <div class="medicine-icon">
+
             </div>
-            <div class="medicine-badge-frame">
-              <Badge>졸음</Badge>
-              <Badge>어지러움</Badge>
-            </div>
+            <span class="medicine-name">코푸정</span>
           </div>
-          <span class="medicine-intake">1정</span>
+          <div class="medicine-badge-frame">
+            <Badge>졸음</Badge>
+            <Badge>어지러움</Badge>
+          </div>
         </div>
+        <span class="medicine-intake">1정</span>
       </div>
-    </ShadowBox>
-  </Main>
+    </div>
+  </ShadowBox>
+  <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+    <div class="day-alert-top">
+      <div class="meal-and-time">
+        <span class="meal">저녁</span>
+        <span class="meal-time">{{ mealTimeStore.dinner }}</span>
+      </div>
+      <Button
+      :variant="medicationStore.evening ? 'destructive' : 'default'"
+      @click="medicationStore.toggleMedication('evening')"
+      >{{ medicationStore.evening ? '취소' : '확인' }}</Button
+      >
+    </div>
+    <div class="medicine-list">
+      <div class="medicine-info-frame" @click="$router.push('/medicine/1')">
+        <div class="medicine-info-left">
+          <div class="medicine-icon-name">
+            <div class="medicine-icon">
+
+            </div>
+            <span class="medicine-name">코푸정</span>
+          </div>
+          <div class="medicine-badge-frame">
+            <Badge>졸음</Badge>
+            <Badge>어지러움</Badge>
+          </div>
+        </div>
+        <span class="medicine-intake">1정</span>
+      </div>
+    </div>
+  </ShadowBox>
+-->
+</Main>
 </template>
 
 <style scoped>

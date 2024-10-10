@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSignupStore } from '@/stores/signupStore';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import { Button } from '@/components/ui/button';
@@ -15,18 +16,21 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
+// Vue Router와 Signup 스토어 인스턴스를 생성합니다.
+const router = useRouter();
+const signupStore = useSignupStore();
+
+// 폼 입력값을 위한 반응형 변수들을 생성합니다.
 const memberType = ref('');
 const name = ref('');
 const phoneNumber = ref('');
 const phoneCarrier = ref('');
 const residentNumberFront = ref('');
 const residentNumberBack = ref('');
-const residentNumberBackRef = ref<HTMLInputElement | null>(null);
-const router = useRouter();
 
+// 폼의 유효성을 검사하는 computed 속성을 정의합니다.
 const isFormValid = computed(
   () =>
-    memberType.value !== '' &&
     name.value !== '' &&
     phoneNumber.value !== '' &&
     phoneCarrier.value !== '' &&
@@ -34,40 +38,36 @@ const isFormValid = computed(
     residentNumberBack.value.length === 1
 );
 
+// 회원 유형을 선택하는 함수를 정의합니다.
 const selectMemberType = (type: string) => {
   memberType.value = type;
 };
 
-watch(residentNumberFront, (newValue) => {
-  if (newValue.length > 6) {
-    residentNumberFront.value = newValue.slice(0, 6);
-  }
-  if (newValue.length === 6 && residentNumberBackRef.value) {
-    residentNumberBackRef.value.focus();
-  }
-});
-
-watch(residentNumberBack, (newValue) => {
-  if (newValue.length > 1) {
-    residentNumberBack.value = newValue.slice(0, 1);
-  }
-});
-
-const handleNextButtonClick = () => {
+// 폼 제출 핸들러를 정의합니다.
+const handleSubmit = async () => {
   if (isFormValid.value) {
-    switch (memberType.value) {
-      case '일반 회원':
-        router.push('/login/bank_type');
-        break;
-      case '의사':
-        router.push('/login/doctor');
-        break;
-      case '약사':
-        router.push('/login/pharmacist');
-        break;
-      default:
-        console.error('회원 가입 타입을 정해주세요');
+    // 입력된 정보를 Pinia 스토어에 저장합니다.
+    signupStore.setUserInfo({
+      memberType: memberType.value,
+      commonInfo: {
+        name: name.value,
+        phoneNumber: phoneNumber.value,
+        phoneCarrier: phoneCarrier.value,
+        residentNumber: residentNumberFront.value + residentNumberBack.value
+      }
+    });
+
+    // 선택된 회원 유형에 따라 다른 페이지로 라우팅합니다.
+    if (memberType.value === '일반 회원') {
+      router.push('/login/bank_type');
+    } else if (memberType.value === '의사') {
+      router.push('/login/doctor');
+    } else if (memberType.value === '약사') {
+      router.push('/login/pharmacist');
     }
+  } else {
+    console.error('폼이 유효하지 않습니다.');
+    // TODO: 사용자에게 유효성 검사 실패 메시지 표시
   }
 };
 </script>
@@ -154,12 +154,7 @@ const handleNextButtonClick = () => {
       </div>
     </div>
 
-    <Button
-      class="next-button"
-      variant="default"
-      :disabled="!isFormValid"
-      @click="handleNextButtonClick"
-    >
+    <Button class="next-button" variant="default" :disabled="!isFormValid" @click="handleSubmit">
       다음
     </Button>
   </Main>
@@ -197,10 +192,6 @@ const handleNextButtonClick = () => {
 }
 
 .one-third {
-  width: 100%;
-}
-
-.member-select-button {
   width: 100%;
 }
 

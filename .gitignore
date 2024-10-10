@@ -35,4 +35,4 @@ coverage
 .env.*.local
 
 # Firebase 구성 파일 (필요한 경우)
-firebase-config.json
+firebase-config.js

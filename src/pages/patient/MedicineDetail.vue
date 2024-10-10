@@ -3,51 +3,81 @@ import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
-import { ref } from 'vue';
+import axiosInstance from '@/api/instance';
+import { onMounted, ref } from 'vue';
+
+interface MedicineDetail {
+  medicineNm: string;
+  medicineCd: string;
+  efficacy: string;
+  imageUrl: string;
+  unit: string;
+  caution: string;
+  // 기타 필요한 속성들...
+}
+
+const medicineDetails = ref<MedicineDetail | null>(null);
+
+const fetchMedicineDetails = async () => {
+  try {
+    const response = await axiosInstance.get(`/api/medi/detail/5?userId=5`);
+    medicineDetails.value = response.data.data;
+    console.log(medicineDetails.value);
+  } catch (error) {
+    console.error('약 상세 정보를 가져오는데 실패했습니다:', error);
+    // 에러 처리 로직 추가 (예: 사용자에게 알림)
+  }
+};
+
+onMounted(fetchMedicineDetails);
 
 const selectedLeft = ref(true);
-
 </script>
 
 <template>
   <HeadBar :back-button="true" :bg-gray="true">약 상세</HeadBar>
   <NavBar />
-  <Main :headbar="true" :navbar="true" :bg-gray="true" >
-    <div class="detail-frame">
+  <Main :headbar="true" :navbar="true" :bg-gray="true">
+    <div class="detail-frame" v-if="medicineDetails">
       <ShadowBox :padding-y="48" :padding-x="48" :margin-bottom="0" class="detail-container">
         <div class="pill-frame">
-          <!-- 약 사진 들어갈 곳 -->
+          <img :src="medicineDetails.imageUrl" alt="약 이미지" />
         </div>
+
         <div class="pill-info">
-          <div class="pill-company">동화약품(주)</div>
-          <div class="pill-name">{{ $route.params.id }}번 약</div>
+          <div class="pill-name">{{ medicineDetails.medicineNm }}</div>
         </div>
         <div class="effect-frame">
-          <div class="effect-badge">식욕감퇴</div>
-          <div class="effect-badge">위부팽만감</div>
-          <div class="effect-badge">소화불량</div>
-          <div class="effect-badge">과식</div>
-          <div class="effect-badge">체함</div>
-          <div class="effect-badge">구역</div>
-          <div class="effect-badge">구토</div>
+          <div
+            v-for="effect in medicineDetails.efficacy.split(',')"
+            :key="effect"
+            class="effect-badge"
+          >
+            {{ effect.trim() }}
+          </div>
         </div>
       </ShadowBox>
     </div>
+
     <ShadowBox :radius="false">
       <div class="tab-frame">
-        <div class="tab" :class="selectedLeft ? 'selected' : ''" @click="selectedLeft = true">복용방법</div>
-        <div class="tab" :class="selectedLeft ? '' : 'selected'" @click="selectedLeft = false">주의사항</div>
+        <div class="tab" :class="selectedLeft ? 'selected' : ''" @click="selectedLeft = true">
+          복용방법
+        </div>
+        <div class="tab" :class="selectedLeft ? '' : 'selected'" @click="selectedLeft = false">
+          주의사항
+        </div>
       </div>
+      <!-- 복용방법과 주의사항 탭 내용 수정 -->
       <div v-if="selectedLeft" class="info">
-        만 15세 이상 및 성인은 1회 1병(75 mL), 만 11세이상~만 15세미만은 1회 2/3병(50 mL), 만 8세 이상~만 11세 미만은 1회 1/2병(37.5 mL), 만 5세 이상~만 8세 미만은 1회 1/3병(25 mL), 만 3세 이상~만 5세 미만은 1회 1/4병(18.75 mL), 만 1세 이상~만 3세 미만은 1회 1/5병(15 mL), 1일 3회 식후에 복용합니다. 복용간격은 4시간 이상으로 합니다.
+        {{ medicineDetails?.unit }}
       </div>
       <div v-else class="info">
-        주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항주의사항 주의사항
+        {{ medicineDetails?.caution }}
       </div>
     </ShadowBox>
   </Main>
 </template>
-
 
 <style scoped>
 .detail-frame {
@@ -119,7 +149,7 @@ const selectedLeft = ref(true);
   font-size: 16px;
   font-weight: 500;
   border-bottom: 2px solid var(--white);
-  color: var(--dark-gray)
+  color: var(--dark-gray);
 }
 
 .tab.selected {
@@ -132,3 +162,4 @@ const selectedLeft = ref(true);
   font-size: 14px;
 }
 </style>
+
