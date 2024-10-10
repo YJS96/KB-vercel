@@ -227,7 +227,7 @@ const toggleMediEatSt = async (id: number, st: boolean) => {
   }
 };
 
-const recentPrescription = ref<Prescription[]>();
+const recentPrescription = ref<Prescription[]>([]);
 const reportPrescriptions = ref<Prescription[]>([]);
 
 // const getRecent = async () => {
@@ -520,9 +520,12 @@ onMounted(async () => {
       <ShadowBox :padding-x="20" :padding-y="20">
         <div class="title-with-arrow" @click="$router.push('/prescription')">
           <div class="shadow-box-title">최근 처방전 내역</div>
-          <i class="fa-solid fa-chevron-right"></i>
+          <i v-if="recentPrescription.length" class="fa-solid fa-chevron-right"></i>
         </div>
-        <div class="prescription-container">
+        <div v-if="recentPrescription.length === 0" class="summary-short-text">
+          등록된 처방전이 없어요
+        </div>
+        <div v-else class="prescription-container">
           <div v-for="prescription in recentPrescription" :key="prescription.prescriptionPk">
             <div class="flex justify-between">
               <div class="flex items-center">
@@ -828,17 +831,5 @@ onMounted(async () => {
 .report-content-bottom {
   margin: 16px;
   margin-bottom: 20px;
-}
-
-.blanks {
-  color: var(--dark-gray);
-  font-size: 14px;
-  margin-top: 12px;
-}
-
-.blank-top {
-  font-size: 16px;
-  font-weight: 600;
-  margin: -12px 0 -8px 0;
 }
 </style>
