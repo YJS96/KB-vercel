@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from '@steveyuowo/vue-hot-toast';
 
 // Vue Router와 Route, Signup 스토어 인스턴스를 생성합니다.
 const router = useRouter();
@@ -58,7 +59,6 @@ const handlePasswordInput = (event: Event) => {
 // '다음' 버튼 클릭 핸들러
 const handleNextClick = async () => {
   if (isFormValid.value) {
-    // 입력된 계좌 정보와 약관 동의 상태를 Pinia 스토어에 저장합니다.
     signupStore.setUserInfo({
       patientInfo: {
         accountNumber: accountNumber.value,
@@ -71,8 +71,17 @@ const handleNextClick = async () => {
       }
     });
 
-    // 성공 페이지로 이동합니다.
-    router.push('/success');
+    try {
+      const { success, nextRoute } = await signupStore.submitSignup();
+      if (success) {
+        router.push('/success');
+      } else {
+        toast.error('회원가입에 실패했습니다. 다시 시도해 주세요.');
+      }
+    } catch (error) {
+      console.error('회원가입 처리 중 오류가 발생했습니다:', error);
+      toast.error('회원가입 처리 중 오류가 발생했습니다.');
+    }
   }
 };
 </script>

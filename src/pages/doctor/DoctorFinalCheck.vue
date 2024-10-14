@@ -3,14 +3,13 @@ import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
 import { Button } from '@/components/ui/button';
-import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useRouter } from 'vue-router';
+import { Input } from '@/components/ui/input';
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axiosInstance from '@/api/instance';
+import { toast } from '@steveyuowo/vue-hot-toast';
 
-const route = useRoute();
-const router = useRouter();
-
+// 필요한 인터페이스 정의
 interface PrescriptionData {
   preMedicineList: Medicine[];
   preInjectionList: Injection[];
@@ -21,6 +20,7 @@ interface PrescriptionData {
   doctor: Doctor;
 }
 
+// 각 데이터 타입에 대한 인터페이스 정의
 interface Medicine {
   medicineNm: string;
   unit: string;
@@ -66,6 +66,10 @@ interface Doctor {
   doctorNm: string;
 }
 
+// Vue Router 인스턴스 생성
+const route = useRoute();
+const router = useRouter();
+
 // 데이터 초기값 설정
 const prescriptionId = ref<number>(0);
 const preMedicineList = ref<Medicine[]>([]);
@@ -75,19 +79,37 @@ const prescription = ref<Prescription | null>(null);
 const disease = ref<Disease | null>(null);
 const hospital = ref<Hospital | null>(null);
 const doctor = ref<Doctor | null>(null);
+const paymentAmount = ref('');
 
+const formattedPaymentAmount = computed({
+  get: () => {
+    // 숫자가 아닌 문자를 제거하고 천 단위로 쉼표를 추가
+    const num = paymentAmount.value.replace(/\D/g, '');
+    return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  },
+  set: (value: string) => {
+    // 입력된 값에서 쉼표를 제거하고 숫자만 저장
+    paymentAmount.value = value.replace(/[^\d]/g, '');
+  }
+});
+
+// 컴포넌트가 마운트될 때 실행되는 함수
 onMounted(() => {
-  prescriptionId.value = Number(route.params.id); // 라우터 params에서 id 값을 가져와 할당
+  // 라우트 파라미터에서 처방전 ID를 가져옴
+  prescriptionId.value = Number(route.params.id);
   console.log('전달된 처방전 ID:', prescriptionId.value);
+  // 처방전 정보를 가져오는 함수 호출
   getUserInfo(prescriptionId.value);
 });
 
+// 처방전 정보를 가져오는 함수
 const getUserInfo = async (id: number) => {
   try {
     const response = await axiosInstance.get(`/api/patient/prescription/detail/${id}`);
     const data = response.data.data;
-    console.log(response.data); // 응답 데이터를 출력해 확인
+    console.log(response.data);
 
+    // 받아온 데이터를 각 ref에 할당
     preMedicineList.value = data.preMedicineList;
     preInjectionList.value = data.preInjectionList;
     user.value = data.user;
@@ -96,15 +118,16 @@ const getUserInfo = async (id: number) => {
     hospital.value = data.hospital;
     doctor.value = data.doctor;
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    toast.error('처방전 정보를 불러오는데 실패했습니다.');
   }
 };
 
 // 날짜 포맷을 'YYYY년 MM월 DD일'로 변환하는 함수
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString); // 문자열을 Date 객체로 변환
+  const date = new Date(dateString);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+  const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${year}년 ${month}월 ${day}일`;
@@ -112,12 +135,39 @@ const formatDate = (dateString: string) => {
 
 // '제 00001 호' 형식으로 변환하는 함수
 const formatNumber = (id: number) => {
-  // ID를 5자리로 포맷 (숫자가 5자리가 되도록 앞에 0을 추가)
   const formattedId = String(id).padStart(5, '0');
   return `제 ${formattedId} 호`;
 };
+
+// 결제 요청 함수
+const requestPayment = async () => {
+  const amount = Number(paymentAmount.value);
+  if (!amount || isNaN(amount)) {
+    toast.error('유효한 금액을 입력해주세요.');
+    return;
+  }
+
+  try {
+    const response = await axiosInstance.post('/api/payment/request', {
+      amount: amount,
+      prescriptionId: prescriptionId.value
+    });
+
+    if (response.data.success) {
+      toast.success(`${formattedPaymentAmount.value}원 결제가 환자에게 요청되었습니다.`);
+      paymentAmount.value = ''; // 입력 필드 초기화
+    } else {
+      toast.error('결제 요청에 실패했습니다.');
+    }
+  } catch (error) {
+    console.error('결제 요청 중 오류 발생:', error);
+    toast.error('결제 요청에 실패했습니다.');
+  }
+};
+
+// 의사 페이지로 이동하는 함수
 const goToDoctorPage = () => {
-  router.push('/doctor'); // doctorPage로 이동
+  router.push('/doctor');
 };
 </script>
 
@@ -305,7 +355,17 @@ const goToDoctorPage = () => {
       </div>
     </ShadowBox>
 
-    <Button size="lg" @click="goToDoctorPage">처방전 확인</Button>
+    <div class="payment-section">
+      <Input
+        v-model="formattedPaymentAmount"
+        type="text"
+        placeholder="결제 금액 입력"
+        class="payment-input"
+      />
+      <Button size="lg" @click="requestPayment" class="payment-button">결제 요청</Button>
+    </div>
+
+    <Button size="lg" @click="goToDoctorPage" class="confirm-button">처방전 확인</Button>
   </Main>
 </template>
 
@@ -537,5 +597,26 @@ td[rowspan] {
   align-items: end;
   gap: 8px;
   color: var(--dark-gray);
+}
+
+.payment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.payment-input {
+  width: 100%;
+}
+
+.payment-button {
+  width: 100%;
+}
+
+.confirm-button {
+  width: 100%;
+  margin-top: 12px;
 }
 </style>

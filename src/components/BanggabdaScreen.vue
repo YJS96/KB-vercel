@@ -118,13 +118,13 @@ onMounted(() => {
 }
 
 .logo {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 24px;
 }
 
 .app-name {
-  font-size: 2rem;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #333;
   margin-bottom: 20px;

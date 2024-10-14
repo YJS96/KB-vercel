@@ -96,15 +96,27 @@ export const useSignupStore = defineStore('signup', {
         switch (this.memberType) {
           case '일반 회원':
             endpoint = '/api/patient/register';
-            data = { ...data, ...this.patientInfo };
+            data = {
+              ...data,
+              ...this.patientInfo,
+              user_nm: this.commonInfo.name // 일반 회원용 이름 필드
+            };
             break;
           case '의사':
             endpoint = '/api/hospital/register';
-            data = { ...data, ...this.doctorInfo };
+            data = {
+              ...data,
+              ...this.doctorInfo,
+              doctor_nm: this.commonInfo.name // 의사용 이름 필드
+            };
             break;
           case '약사':
             endpoint = '/api/pharmacy/register';
-            data = { ...data, ...this.pharmacistInfo };
+            data = {
+              ...data,
+              ...this.pharmacistInfo,
+              chemist_nm: this.commonInfo.name // 약사용 이름 필드
+            };
             break;
           default:
             throw new Error('잘못된 회원 유형입니다.');
@@ -144,6 +156,7 @@ export const useSignupStore = defineStore('signup', {
       }
     }
   },
+
   // 상태 지속성 설정 (로컬 스토리지에 저장)
   persist: true
 });

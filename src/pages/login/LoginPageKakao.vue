@@ -47,8 +47,9 @@ const navigateToNextPage = () => {
 }
 
 .logo {
-  width: 100%;
-  height: 100%;
+  width: 100px;
+  height: 100px;
+  border-radius: 24px;
   object-fit: cover;
 }
 

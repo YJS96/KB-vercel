@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { CheckCircle2 } from 'lucide-vue-next';
+import { toast } from '@steveyuowo/vue-hot-toast';
 
 // Vue Router와 Signup 스토어 인스턴스를 생성합니다.
 const router = useRouter();
@@ -36,9 +37,8 @@ const isFormValid = computed(
 );
 
 // '다음' 버튼 클릭 핸들러를 정의합니다.
-const handleNextButtonClick = () => {
+const handleNextButtonClick = async () => {
   if (isFormValid.value) {
-    // 입력된 약사 정보를 Pinia 스토어에 저장합니다.
     signupStore.setUserInfo({
       pharmacistInfo: {
         licenseNumber: licenseNumber.value,
@@ -46,11 +46,20 @@ const handleNextButtonClick = () => {
         pharmacyPhone: pharmacyPhone.value
       }
     });
-    // 성공 페이지로 이동합니다.
-    router.push('/success');
+
+    try {
+      const { success, nextRoute } = await signupStore.submitSignup();
+      if (success) {
+        router.push('/success');
+      } else {
+        toast.error('회원가입에 실패했습니다. 다시 시도해 주세요.');
+      }
+    } catch (error) {
+      console.error('회원가입 처리 중 오류가 발생했습니다:', error);
+      toast.error('회원가입 처리 중 오류가 발생했습니다.');
+    }
   } else {
-    console.error('폼이 유효하지 않습니다.');
-    // TODO: 사용자에게 유효성 검사 실패 메시지 표시
+    toast.error('모든 필드를 올바르게 입력해주세요.');
   }
 };
 </script>

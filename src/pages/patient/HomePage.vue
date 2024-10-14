@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useFaceIdStore } from '@/stores/faceId';
 import { useThemeStore } from '@/stores/theme';
 import { toast } from '@steveyuowo/vue-hot-toast';
@@ -19,6 +19,14 @@ import {
   DialogClose,
   DialogTrigger
 } from '@/components/ui/dialog';
+import {
+  Carousel,
+  type CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
+} from '@/components/ui/carousel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -111,7 +119,7 @@ const handleSummaryDetail = () => {
 const faceIdStore = useFaceIdStore();
 
 const userName = ref('임시');
-faceIdStore.isAuthenticated = false;
+faceIdStore.isAuthenticated = true;
 
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
@@ -154,17 +162,16 @@ const togglePlayPuase = async (content: string | undefined) => {
 import axiosInstance from '@/api/instance';
 import moment from 'moment';
 import 'moment/locale/ko';
+import { watchOnce } from '@vueuse/core';
 
-const NotRecievedPrescription = ref<Prescription>();
+const NotRecievedPrescription = ref<Prescription[]>();
 
 const getNotRecieved = async () => {
   await axiosInstance
     .get('/api/patient/prescription/new/list?userId=2')
     .then((res) => {
-      const temp = res.data.data.prescriptionList;
-      console.log(temp);
-      NotRecievedPrescription.value = temp[temp.length - 1];
-      // console.log(NotRecievedPrescription.value);
+      console.log(res.data.data.prescriptionList);
+      NotRecievedPrescription.value = res.data.data.prescriptionList;
     })
     .catch((err) => {
       console.log(err);
@@ -270,11 +277,36 @@ const getRecent = async () => {
   }
 };
 
-const qrData = computed(() => ({
-  userId: 1,
-  prescriptionId: NotRecievedPrescription.value?.prescriptionPk,
-  hello: 'weBangapda'
-}));
+const generateQRCode = (pk: number) => {
+  return {
+    userId: 1,
+    prescriptionId: pk,
+    hello: 'weBangapda'
+  };
+};
+
+const carouselApi = ref<CarouselApi>();
+const selectedIndex = ref(0);
+
+function onSelect() {
+  if (!carouselApi.value) return;
+  selectedIndex.value = carouselApi.value.selectedScrollSnap();
+}
+
+const isQRDialogOpen = ref(false);
+const selectedQRData = ref();
+
+const openQRDialog = (prescription: Prescription) => {
+  selectedQRData.value = generateQRCode(prescription.prescriptionPk);
+  isQRDialogOpen.value = true;
+};
+
+watchOnce(carouselApi, (api) => {
+  if (!api) return;
+  onSelect();
+  api.on('select', onSelect);
+  api.on('reInit', onSelect);
+});
 
 onMounted(async () => {
   if (audioPlayer.value) {
@@ -292,7 +324,45 @@ onMounted(async () => {
   <Main :headbar="false" :navbar="true" :bg-gray="true" style="overflow-y: hidden">
     <div class="top-half">
       <div class="hospital-name">안녕하세요, 최규찬님</div>
-      <ShadowBox v-if="NotRecievedPrescription" :height="120" :margin-bottom="0">
+      <div v-if="NotRecievedPrescription">
+        <Carousel @init-api="(api) => (carouselApi = api)" class="h-[120px]">
+          <CarouselContent class="ps-0">
+            <CarouselItem v-for="(prescription, index) in NotRecievedPrescription" :key="index">
+              <ShadowBox v-if="NotRecievedPrescription" :height="120" :margin-bottom="0">
+                <div class="ticket-left">
+                  <div>
+                    <div class="hospital-name">{{ prescription?.hospitalNm }} {{ index + 1 }}</div>
+                    <div class="hospital-address">
+                      {{ prescription.hospitalSi }}
+                      {{ prescription.hospitalGu }}
+                      {{ prescription.hospitalDong }}
+                    </div>
+                  </div>
+                  <div class="ticket-date">
+                    <i class="fa-regular fa-calendar"></i>
+                    <div class="date-and-time">
+                      {{ moment(prescription.createYmd).format('YY. M. DD. | hh:mm') }}
+                    </div>
+                  </div>
+                </div>
+                <div class="ticket-right" @click="openQRDialog(prescription)">
+                  <img src="/images/qr-logo.png" alt="" />
+                  <div class="qr-text">약 받기</div>
+                </div>
+              </ShadowBox>
+            </CarouselItem>
+          </CarouselContent>
+        </Carousel>
+        <div class="dot-indicator">
+          <span
+            v-for="(_, index) in NotRecievedPrescription.length"
+            :key="index"
+            class="dot"
+            :class="{ active: index === selectedIndex }"
+          ></span>
+        </div>
+      </div>
+      <!-- <ShadowBox v-if="NotRecievedPrescription" :height="120" :margin-bottom="0">
         <div class="ticket-left">
           <div>
             <div class="hospital-name">
@@ -351,12 +421,12 @@ onMounted(async () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </ShadowBox>
+      </ShadowBox> -->
       <div v-else class="blank-top">오늘도 건강한 하루 보내세요!</div>
     </div>
     <div
       class="bottom-half"
-      :style="NotRecievedPrescription ? 'height: calc(100% - 252px)' : 'height: calc(100% - 156px)'"
+      :style="NotRecievedPrescription ? 'height: calc(100% - 272px)' : 'height: calc(100% - 156px)'"
     >
       <div v-if="NotRecievedPrescription" class="notice">
         <img src="/images/tada.svg" />
@@ -558,6 +628,41 @@ onMounted(async () => {
         </div>
       </ShadowBox>
     </div>
+    <Dialog v-model:open="isQRDialogOpen">
+      <DialogContent>
+        <div class="qr-content-frame" v-if="faceIdStore.isAuthenticated">
+          <QRCodeVue3
+            :value="JSON.stringify(selectedQRData)"
+            :qrOptions="{ typeNumber: 0, mode: 'Byte', errorCorrectionLevel: 'H' }"
+            :imageOptions="{ hideBackgroundDots: false, imageSize: 0, margin: 0 }"
+            :dotsOptions="{
+              type: 'square',
+              color: '#000000',
+              gradient: {
+                type: 'linear',
+                rotation: 0,
+                colorStops: [
+                  { offset: 0, color: '#000000' },
+                  { offset: 1, color: '#000000' }
+                ]
+              }
+            }"
+            :backgroundOptions="{ color: '#ffffff' }"
+            :cornersSquareOptions="{ type: 'square', color: '#000000' }"
+            :cornersDotOptions="{ type: undefined, color: '#000000' }"
+            fileExt="png"
+            myclass="my-qur"
+            imgclass="img-qr"
+          />
+        </div>
+        <div class="text-center mt-4" v-else>본인인증을 완료해주세요</div>
+        <DialogFooter class="modal-footer">
+          <DialogClose>
+            <Button variant="destructive" size="lg">닫기</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <audio ref="audioPlayer" @play="isPlaying = true" @pause="isPlaying = false"></audio>
   </Main>
 </template>
@@ -567,7 +672,7 @@ onMounted(async () => {
   width: 100%;
   background-color: var(--css-primary);
   border-radius: 0 0 16px 16px;
-  padding: 36px 5.13% calc(5.13% + 4px);
+  padding: 36px 5.13% calc(5.13% - 2px);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -848,5 +953,30 @@ onMounted(async () => {
 .report-content-bottom {
   margin: 16px;
   margin-bottom: 20px;
+}
+
+.fa-circle {
+  font-size: 7px;
+  color: var(--black);
+}
+
+.dot-indicator {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--black);
+  opacity: 16%;
+  margin: 0 4px;
+  transition: background-color 0.3s ease;
+}
+
+.dot.active {
+  opacity: 80%;
 }
 </style>

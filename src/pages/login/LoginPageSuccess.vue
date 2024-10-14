@@ -4,27 +4,12 @@ import { useRouter } from 'vue-router';
 import { Button } from '@/components/ui/button';
 import Main from '@/components/Main.vue';
 
-// Signup 스토어와 Vue Router 인스턴스를 생성합니다.
 const signupStore = useSignupStore();
 const router = useRouter();
 
-// 확인 버튼 클릭 핸들러를 정의합니다.
-const handleConfirm = async () => {
-  try {
-    // Pinia 스토어의 submitSignup 액션을 호출하여 회원가입을 완료합니다.
-    const { success, nextRoute } = await signupStore.submitSignup();
-    if (success && nextRoute) {
-      console.log('회원가입 정보가 성공적으로 전송되었습니다.');
-      // 성공 시 다음 라우트로 이동합니다.
-      router.push(nextRoute);
-    } else {
-      console.error('회원가입 정보 전송에 실패했습니다.');
-      // TODO: 사용자에게 에러 메시지 표시
-    }
-  } catch (error) {
-    console.error('회원가입 처리 중 오류가 발생했습니다:', error);
-    // TODO: 사용자에게 에러 메시지 표시
-  }
+const handleConfirm = () => {
+  const nextRoute = signupStore.getNextRoute();
+  router.push(nextRoute);
 };
 </script>
 
