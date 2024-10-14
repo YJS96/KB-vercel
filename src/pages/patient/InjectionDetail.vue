@@ -1,35 +1,52 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
 import ShadowBox from '@/components/ShadowBox.vue';
-
 import axiosInstance from '@/api/instance';
 
-const route = useRoute();
-const medicineId = route.params.id;
-
-interface MedicineDetail {
-  medicineNm: string;
-  medicineCd: string;
-  efficacy: string;
-  imageUrl: string;
-  unit: string;
+interface InjectionDetail {
+  injectionPk: number;
+  injectionNm: string;
+  injectionCd: number;
+  price: number;
+  sideEffect: string;
   caution: string;
-  // 기타 필요한 속성들...
+  unit: string;
+  time: string;
+  efficacy: string;
+  copaymentRateCd: string;
 }
 
-const medicineDetails = ref<MedicineDetail | null>(null);
-const imgUrl = computed(() => `/images/medicines/${medicineDetails.value?.medicineNm}.png`);
+const route = useRoute();
+const injectionIdString: string | string[] = route.params.id;
+const injectionId = ref(0);
+
+// injectionId를 안전하게 파싱
+if (typeof injectionIdString === 'string') {
+  injectionId.value = parseInt(injectionIdString, 10) || 0;
+} else if (Array.isArray(injectionIdString) && injectionIdString.length > 0) {
+  injectionId.value = parseInt(injectionIdString[0], 10) || 0;
+}
+
+const injectionDetailList = ref<InjectionDetail[]>([]);
+const injectionDetail = computed(() => {
+  if (injectionDetailList.value.length > 0 && injectionId.value > 0) {
+    const index = injectionId.value - 1;
+    if (index >= 0 && index < injectionDetailList.value.length) {
+      return injectionDetailList.value[index];
+    }
+  }
+  return null; // 유효한 데이터가 없는 경우
+});
 
 const fetchMedicineDetails = async () => {
   try {
-    const response = await axiosInstance.get(`/api/medi/detail/${medicineId}?userId=5`);
-    medicineDetails.value = response.data.data;
-    console.log(medicineDetails.value);
+    const response = await axiosInstance.get(`/api/hospital/injection`);
+    injectionDetailList.value = await response.data.data.injectionList;
+    console.log(injectionDetailList.value);
   } catch (error) {
     console.error('약 상세 정보를 가져오는데 실패했습니다:', error);
     // 에러 처리 로직 추가 (예: 사용자에게 알림)
@@ -42,20 +59,20 @@ const selectedLeft = ref(true);
 </script>
 
 <template>
-  <HeadBar :back-button="true" :bg-gray="true">약 상세</HeadBar>
+  <HeadBar :back-button="true" :bg-gray="true">주사제 상세</HeadBar>
   <NavBar />
   <Main :headbar="true" :navbar="true" :bg-gray="true">
-    <div class="detail-frame" v-if="medicineDetails">
+    <div class="detail-frame" v-if="injectionDetail">
       <ShadowBox :padding-y="48" :padding-x="48" :margin-bottom="0" class="detail-container">
         <div class="pill-frame">
-          <img :src="imgUrl" alt="약 이미지" />
+          <img src="/images/medicines/injection-icon.png" alt="약 이미지" />
         </div>
         <div class="pill-info">
-          <div class="pill-name">{{ medicineDetails.medicineNm }}</div>
+          <div class="pill-name">{{ injectionDetail?.injectionNm }}</div>
         </div>
         <div class="effect-frame">
           <div
-            v-for="effect in medicineDetails.efficacy.split(',')"
+            v-for="effect in injectionDetail?.efficacy.split(',')"
             :key="effect"
             class="effect-badge"
           >
@@ -75,12 +92,8 @@ const selectedLeft = ref(true);
         </div>
       </div>
       <!-- 복용방법과 주의사항 탭 내용 수정 -->
-      <div v-if="selectedLeft" class="info">
-        {{ medicineDetails?.unit }}
-      </div>
-      <div v-else class="info">
-        {{ medicineDetails?.caution }}
-      </div>
+      <div v-if="selectedLeft" class="info">{{ injectionDetail?.unit }}</div>
+      <div v-else class="info">{{ injectionDetail?.caution }}</div>
     </ShadowBox>
   </Main>
 </template>

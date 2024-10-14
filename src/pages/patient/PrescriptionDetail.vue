@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useFaceIdStore } from '@/stores/faceId';
+import { toast } from '@steveyuowo/vue-hot-toast';
+import axiosInstance from '@/api/instance';
+import html2canvas from 'html2canvas';
+import moment from 'moment';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
 import Main from '@/components/Main.vue';
-import html2canvas from 'html2canvas';
-import { Toaster, toast } from '@steveyuowo/vue-hot-toast';
 import '@/assets/toast.css';
 import {
   Dialog,
@@ -26,81 +29,289 @@ import {
 } from '@/components/ui/carousel';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
+interface HospitalBill {
+  createYmd: number[];
+  hospitalBillPk: number;
+  hospitalNm: string;
+  hospitalNo: number;
+  prescriptionId: number;
+  totalPrice: number;
+}
+
+interface PharmacyBill {
+  createYmd: number[];
+  pharmacyBillPk: number;
+  pharmacyNm: string;
+  pharmacyNo: number;
+  prescriptionId: number;
+  totalPrice: number;
+}
+
+interface Doctor {
+  doctorPk: number;
+  doctorNm: string;
+  tp: string;
+  doctorNo: string;
+  phoneNo: string;
+  gender: 'MALE' | 'FEMALE';
+  hospitalId: number | null;
+}
+
+interface Prescription {
+  prescriptionPk: number;
+  prescriptionNo: number;
+  duration: number;
+  description: string;
+  prescriptionSt: boolean;
+  insuranceSt: boolean;
+  doctorId: number | null;
+  userId: number | null;
+  chemistId: number | null;
+  createYmd: string;
+}
+
+interface Pharmacy {
+  pharmacyPk: number;
+  pharmacyNm: string;
+  phoneNo: string;
+  faxNo: string;
+  pharmacyNo: number;
+  dongId: number | null;
+}
+
+interface Hospital {
+  hospitalPk: number;
+  hospitalNm: string;
+  phoneNo: string;
+  hospitalNo: number;
+  faxNo: string;
+  dongId: number | null;
+}
+
+interface User {
+  userNm: string;
+  phoneNo: string;
+  gender: 'MALE' | 'FEMALE';
+  firstNo: string;
+  lastNo: string;
+  bankNm: string;
+  account: number;
+  accountNo: string;
+  accountPw: string;
+  morningAlarm: string | null;
+  lunchAlarm: string | null;
+  dinnerAlarm: string | null;
+}
+
+interface Chemist {
+  chemistPk: number;
+  chemistNm: string;
+  chemistNo: string;
+  phoneNo: string;
+  gender: 'MALE' | 'FEMALE';
+  pharmacyId: number | null;
+}
+
+interface Disease {
+  diseasePk: string;
+  diseaseCd: string;
+}
+
+interface Medicine {
+  medicineNm: string;
+  unit: string;
+  dayCnt: string;
+  totalDay: string;
+  method: string;
+}
+
+interface Injection {
+  injectionNm: string;
+  unit: string;
+  dayCnt: string;
+  totalDay: string;
+  method: string;
+}
+
+// interface MedicalSystem {
+//   doctor: Doctor;
+//   prescription: Prescription;
+//   pharmacy: Pharmacy;
+//   hospital: Hospital;
+//   user: User;
+//   chemist: Chemist;
+// }
+
+const route = useRoute();
 const faceIdStore = useFaceIdStore();
-const userName = ref('임시');
 
-faceIdStore.isAuthenticated = false;
+const prescId = route.params.id;
+const userId = 1;
+
+const prescInfo = ref<Prescription | null>();
+const prescDoctor = ref<Doctor | null>();
+const prescUser = ref<User | null>();
+const prescPharmacy = ref<Pharmacy | null>();
+const prescHospital = ref<Hospital | null>();
+const prescChemist = ref<Chemist | null>();
+const preMedicineList = ref<Medicine[]>([]);
+const preInjectionList = ref<Injection[]>([]);
+const diseaseList = ref<Disease | null>();
+
+const hospitalBill = ref<HospitalBill | null>();
+const pharmacyBill = ref<PharmacyBill | null>();
+
+const userName = ref('임시');
+const receiptIndex = ref(0);
+
+const getPrescriptionDetail = async () => {
+  try {
+    const response = await axiosInstance.get(`api/patient/prescription/detail/${prescId}`);
+    const responseData = response.data.data;
+    console.log(responseData);
+    prescInfo.value = responseData.prescription;
+    // console.log(responseData.prescription);
+    prescDoctor.value = responseData.doctor;
+    prescUser.value = responseData.user;
+    prescPharmacy.value = responseData.pharmacy;
+    prescHospital.value = responseData.hospital;
+    prescChemist.value = responseData.chemist;
+    diseaseList.value = responseData.diseaseList[0];
+    preMedicineList.value = responseData.preMedicineList;
+    preInjectionList.value = responseData.preInjectionList;
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const getHospitalBill = async () => {
+  try {
+    const response = await axiosInstance.get(
+      `api/patient/prescription/hospitalBill/${prescId}?userId=${userId}`
+    );
+    hospitalBill.value = response.data.data;
+    // console.log(response.data.data);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const getPharmacyBill = async () => {
+  try {
+    const response = await axiosInstance.get(
+      `api/patient/prescription/pharmacyBill/${prescId}?userId=${userId}`
+    );
+    pharmacyBill.value = response.data.data;
+    // console.log(response.data.data);
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const handleReceiptIndex = (idx: number) => {
+  receiptIndex.value = idx;
+};
+
+faceIdStore.isAuthenticated = true;
 const handleFaceIdAuth = () => {
   faceIdStore.authenticate(userName.value);
 };
 
-const prescDetail = [
+const prescDetail = computed(() => [
   {
-    key: '병원명',
-    value: '김성현내과의원'
+    name: '병원명',
+    info: prescHospital.value?.hospitalNm
   },
   {
-    key: '의사명',
-    value: '김성현'
+    name: '의사명',
+    info: prescDoctor.value?.doctorNm
   },
   {
-    key: '약국명',
-    value: '무슨무슨약국'
+    name: '약국명',
+    info: prescPharmacy.value?.pharmacyNm
   },
   {
-    key: '약사명',
-    value: '임준수'
+    name: '약사명',
+    info: prescChemist.value?.chemistNm
   },
   {
-    key: '작성일',
-    value: '2024. 09. 13'
+    name: '작성일',
+    info: prescInfo.value ? moment(prescInfo.value.createYmd).format('YY. M. D.') : null
   },
   {
-    key: '처방약',
-    value: '3개'
+    name: '처방약',
+    info: ''
   }
-];
+]);
 
-
-const claimRequested = ref(false);
-const medicineReceived = ref(false);
-
-const handleClaim = () => {
-  if (claimRequested.value) return;
-  toast.success('청구 신청이 완료되었습니다');
-  claimRequested.value = true;
+const handleClaim = async () => {
+  if (prescInfo.value?.insuranceSt) {
+    toast.error('이미 신청했어요');
+    return;
+  }
+  try {
+    const response = await axiosInstance.patch(`/api/insurance/update/${prescId}?userId=1`);
+    console.log(response);
+    toast.success('청구 신청이 완료되었습니다');
+    getPrescriptionDetail();
+  } catch (err) {
+    console.log(err);
+  }
 };
 
-const handleReceived = () => {
-  if (medicineReceived.value) return;
-  toast.success('약을 수령했습니다');
-  medicineReceived.value = true;
+const handleReceived = async () => {
+  if (prescInfo.value?.prescriptionSt) {
+    toast.error('이미 수령했어요');
+    return;
+  }
+
+  try {
+    const response = await axiosInstance.patch(`/api/patient/prescription/${prescId}?userId=1`);
+    console.log(response);
+    toast.success('약을 수령했습니다');
+    getPrescriptionDetail();
+  } catch (err) {
+    console.log(err);
+  }
 };
 
 const saveAsImage = async (item: string) => {
-  const carouselItem = document.querySelector(`.${item}`) as HTMLElement;
-  if (carouselItem) {
+  let selector: string;
+  let fileName: string;
+
+  if (item === 'presc-frame') {
+    selector = '.presc-frame';
+    fileName = 'prescription';
+  } else if (item === 'carousel-item') {
+    if (receiptIndex.value === 0) {
+      selector = '.carousel-item-first';
+      fileName = 'receipt_hospital';
+    } else {
+      selector = '.carousel-item-second';
+      fileName = 'receipt_pharmacy';
+    }
+  } else {
+    console.error('Invalid item type');
+    return;
+  }
+
+  const element = document.querySelector(selector) as HTMLElement;
+  if (element) {
     try {
-      // Capture the original content
-      const originalCanvas = await html2canvas(carouselItem, { scale: 5 });
-      // Create a new canvas with extra space for margins
-      const margin = 80; // 50px margin on each side
+      const originalCanvas = await html2canvas(element, { scale: 5 });
+      const margin = 80;
       const newWidth = originalCanvas.width + margin * 2;
       const newHeight = originalCanvas.height + margin * 2;
       const newCanvas = document.createElement('canvas');
-      const fileName = item == 'presc-frame' ? 'prescription' : 'receipt';
       newCanvas.width = newWidth;
       newCanvas.height = newHeight;
-      // Get the context of the new canvas
       const ctx = newCanvas.getContext('2d');
       if (ctx) {
-        // Fill the entire canvas with a white background
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, newWidth, newHeight);
-        // Draw the original canvas onto the new canvas with margins
         ctx.drawImage(originalCanvas, margin, margin);
-        // Convert the new canvas to an image and trigger download
         const image = newCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = image;
@@ -112,58 +323,73 @@ const saveAsImage = async (item: string) => {
     }
   }
 };
+
+onMounted(() => {
+  getPrescriptionDetail();
+  getHospitalBill();
+  getPharmacyBill();
+});
 </script>
 
 <template>
   <HeadBar :back-button="true">상세보기</HeadBar>
   <NavBar />
-  <Toaster />
   <Main :headbar="true" :navbar="true" :padded="true">
     <div class="misc-func-frame">
       <div class="misc-func-container">
         <div class="misc-func-left">
-          <div class="icon-frame">
-            <!-- 아이콘 -->
+          <div class="icon-frame claim">
+            <img src="/images/claim.svg" alt="claim" />
           </div>
           <div class="misc-info-text">
             <span class="misc-info-title">보험금 간편 청구</span>
-            <span class="misc-info-desc">{서비스명}이 복잡한 과정을 대신 해드려요</span>
+            <span class="misc-info-desc">방갑다가 복잡한 과정을 대신 해드려요</span>
           </div>
         </div>
-        <Button @click="handleClaim()" :variant="claimRequested ? 'destructive' : 'default'">{{
-          claimRequested ? '완료' : '신청'
-        }}</Button>
+        <Button
+          @click="handleClaim()"
+          :variant="prescInfo?.insuranceSt ? 'destructive' : 'default'"
+          >{{ prescInfo?.insuranceSt ? '완료' : '신청' }}</Button
+        >
       </div>
       <div class="misc-func-container">
         <div class="misc-func-left">
-          <div class="icon-frame">
-            <!-- 아이콘 -->
+          <div class="icon-frame check">
+            <img src="/images/checkreceived.svg" alt="check" />
           </div>
           <div class="misc-info-text">
             <span class="misc-info-title">약 수령 확인</span>
-            <span class="misc-info-desc">{서비스명}을 사용하지 않았어도 바꿀 수 있어요</span>
+            <span class="misc-info-desc">방갑다를 사용하지 않았어도 바꿀 수 있어요</span>
           </div>
         </div>
-        <Button @click="handleReceived()" :variant="medicineReceived ? 'destructive' : 'default'">{{
-          medicineReceived ? '완료' : '신청'
-        }}</Button>
+        <Button
+          @click="handleReceived()"
+          :variant="prescInfo?.prescriptionSt ? 'destructive' : 'default'"
+          >{{ prescInfo?.prescriptionSt ? '완료' : '신청' }}</Button
+        >
       </div>
     </div>
     <div class="presc-title">처방전 상세</div>
     <div class="detail-frame">
-      <div class="detail-container" v-for="info in prescDetail" :key="info.key">
-        <span>{{ info.key }}</span>
-        <div v-if="info.key != '처방약'">
-          {{ info.value }}
+      <div class="detail-container" v-for="info in prescDetail" :key="info.name">
+        <span>{{ info.name }}</span>
+        <div v-if="info.name != '처방약'">
+          <Skeleton v-if="!prescInfo" class="h-7 w-16"></Skeleton>
+          {{ info.info }}
         </div>
         <Popover v-else>
           <PopoverTrigger>
-            <Button variant="outline">3개</Button>
+            <Button variant="outline"
+              >{{ preMedicineList.length + preInjectionList.length }}개</Button
+            >
           </PopoverTrigger>
           <PopoverContent class="me-4 flex flex-col gap-2 text-sm text-cssblack">
-            <div>약이름 1</div>
-            <div>약이름 2</div>
-            <div>약이름 3</div>
+            <div v-for="(medicine, index) in preMedicineList" :key="index">
+              {{ medicine.medicineNm }}
+            </div>
+            <div v-for="(injection, index) in preInjectionList" :key="index">
+              {{ injection.injectionNm }}
+            </div>
           </PopoverContent>
         </Popover>
       </div>
@@ -180,31 +406,36 @@ const saveAsImage = async (item: string) => {
           <div class="presc-header">처&nbsp;&nbsp;&nbsp; 방&nbsp;&nbsp;&nbsp; 전</div>
           <div class="flex justify-between px-1 mb-1">
             <div>보험유형 : 건강보험</div>
-            <div>요양기관번호 : 1238861</div>
+            <div>요양기관번호 : {{ prescHospital?.hospitalNo }}</div>
           </div>
           <table>
             <thead>
               <tr>
                 <th colspan="2" rowspan="2">교부번호</th>
-                <th colspan="2" rowspan="2">2024년 09월 24일<br />제 00001 호</th>
+                <th colspan="2" rowspan="2">
+                  {{ moment(prescInfo?.createYmd).format('YYYY년 MM월 DD일') }}<br />제
+                  {{ prescInfo?.prescriptionNo }} 호
+                </th>
                 <th rowspan="4">의료기관</th>
                 <th>명칭</th>
-                <th>김성헌내과의원</th>
+                <th>{{ prescHospital?.hospitalNm }}</th>
               </tr>
               <tr>
                 <th>전화번호</th>
-                <th>02-1234-5678</th>
+                <th>{{ prescHospital?.phoneNo }}</th>
               </tr>
               <tr>
                 <th rowspan="2">환자</th>
                 <th>성명</th>
-                <th colspan="2">임준수</th>
+                <th colspan="2">{{ prescUser?.userNm }}</th>
                 <th>팩스번호</th>
-                <th>02-1234-5679</th>
+                <th>{{ prescHospital?.faxNo }}</th>
               </tr>
               <tr>
                 <th>주민등록번호</th>
-                <th colspan="2">960816-1******</th>
+                <th colspan="2">
+                  {{ prescUser?.firstNo }} - {{ prescUser?.lastNo.substring(0, 1) }}******
+                </th>
                 <th>e-mail주소</th>
                 <th></th>
               </tr>
@@ -212,9 +443,9 @@ const saveAsImage = async (item: string) => {
             <tbody>
               <tr>
                 <td rowspan="2">질병<br />분류<br />기호</td>
-                <td rowspan="2">A049</td>
+                <td rowspan="2">{{ diseaseList?.diseaseCd }}</td>
                 <td rowspan="2">처방<br />의료인의<br />성명</td>
-                <td rowspan="2">김성헌</td>
+                <td rowspan="2">{{ prescDoctor?.doctorNm }}</td>
                 <td colspan="2">면허종별</td>
                 <td>의사</td>
               </tr>
@@ -241,26 +472,12 @@ const saveAsImage = async (item: string) => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td colspan="2" class="left">프레드포로트점안액(외용)</td>
-                <td>1</td>
-                <td>6</td>
-                <td>1</td>
-                <td colspan="2" class="left">2시간마다</td>
-              </tr>
-              <tr>
-                <td colspan="2" class="left">파오시드정 20mb(내복)</td>
-                <td>1</td>
-                <td>3</td>
-                <td>2</td>
-                <td colspan="2" class="left">식후30분</td>
-              </tr>
-              <tr>
-                <td colspan="2" class="left">슬로젠정(내복)</td>
-                <td>2</td>
-                <td>3</td>
-                <td>2</td>
-                <td colspan="2" class="left">식후30분</td>
+              <tr v-for="(medicine, index) in preMedicineList" :key="index">
+                <td colspan="2" class="left">{{ medicine.medicineNm || '' }}</td>
+                <td>{{ medicine.unit || '' }}</td>
+                <td>{{ medicine.dayCnt || '' }}</td>
+                <td>{{ medicine.totalDay || '' }}</td>
+                <td colspan="2" class="left">{{ medicine.method || '' }}</td>
               </tr>
               <tr>
                 <td colspan="2"></td>
@@ -297,12 +514,12 @@ const saveAsImage = async (item: string) => {
                 <td colspan="5">주사제 처방내역 (원내조제 , 원외처방)</td>
                 <td colspan="2"></td>
               </tr>
-              <tr>
-                <td colspan="2"></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td colspan="2"></td>
+              <tr v-for="(injection, index) in preInjectionList" :key="index">
+                <td colspan="2" class="left">{{ injection.injectionNm || '' }}</td>
+                <td>{{ injection.unit || '' }}</td>
+                <td>{{ injection.dayCnt || '' }}</td>
+                <td>{{ injection.totalDay || '' }}</td>
+                <td colspan="2" class="left">{{ injection.method || '' }}</td>
               </tr>
               <tr>
                 <td colspan="2"></td>
@@ -317,7 +534,9 @@ const saveAsImage = async (item: string) => {
             <thead>
               <tr>
                 <td>사용기간</td>
-                <td colspan="5">교부일로부터 ( &nbsp;&nbsp;3&nbsp;&nbsp; )일간</td>
+                <td colspan="5">
+                  교부일로부터 ( &nbsp;&nbsp;{{ prescInfo?.duration }}&nbsp;&nbsp; )일간
+                </td>
                 <td colspan="5">*사용기간내에 약국에 제출하여야 합니다.</td>
               </tr>
             </thead>
@@ -333,14 +552,14 @@ const saveAsImage = async (item: string) => {
               <tr>
                 <td rowspan="4" class="no-border-bottom">조<br />제<br />내<br />역</td>
                 <td colspan="2">조제기관의명칭</td>
-                <td colspan="5"></td>
+                <td colspan="5">{{ prescPharmacy?.pharmacyNm }}</td>
                 <td colspan="4" rowspan="2">처방전의 변경, 수정, 확인<br />대체 시 그 내용 등</td>
               </tr>
               <tr>
                 <td colspan="2">조제약사</td>
                 <td>성명</td>
                 <td colspan="4" style="border-right: 0.8px solid var(--blue)">
-                  &nbsp;임준수 &nbsp;&nbsp;&nbsp;(서명 또는 날인)
+                  &nbsp;{{ prescChemist?.chemistNm }} &nbsp;&nbsp;&nbsp;(서명 또는 날인)
                 </td>
               </tr>
               <tr>
@@ -378,18 +597,20 @@ const saveAsImage = async (item: string) => {
       <DialogContent>
         <Carousel>
           <CarouselContent class="carousel-frame">
-            <CarouselItem class="carousel-item">
+            <CarouselItem class="carousel-item-first">
               <div class="receipt-frame">
-                <div class="receipt-store">김성헌내과의원</div>
+                <div class="receipt-store">{{ hospitalBill?.hospitalNm }}</div>
                 <div>
-                  <span class="receipt-price">10,000</span>
+                  <span class="receipt-price">{{ hospitalBill?.totalPrice.toLocaleString() }}</span>
                   <span class="won">원</span>
                 </div>
               </div>
               <div class="receipt-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">승인일시</div>
-                  <div>2024-09-23 11:19</div>
+                  <div>
+                    {{ moment(hospitalBill?.createYmd).format('YYYY-MM-DD HH:MM') }}
+                  </div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">거래유형</div>
@@ -403,36 +624,38 @@ const saveAsImage = async (item: string) => {
               <div class="receipt-top dotted-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">공급가액</div>
-                  <div>9,091원</div>
+                  <div>{{ (2340 - Math.floor((2340 * 0.1) / 10) * 10).toLocaleString() }}원</div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">부가세</div>
-                  <div>909원</div>
+                  <div>{{ (Math.floor((2340 * 0.1) / 10) * 10).toLocaleString() }}원</div>
                 </div>
               </div>
               <div class="receipt-top dotted-top" style="margin-bottom: 18px">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">가맹점명</div>
-                  <div>김성헌내과의원</div>
+                  <div>{{ hospitalBill?.hospitalNm }}</div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">사업자번호</div>
-                  <div>123-456-7890</div>
+                  <div>{{ hospitalBill?.hospitalNo }}</div>
                 </div>
               </div>
             </CarouselItem>
-            <CarouselItem>
+            <CarouselItem class="carousel-item-second">
               <div class="receipt-frame">
-                <div class="receipt-store">김성헌약국</div>
+                <div class="receipt-store">{{ pharmacyBill?.pharmacyNm }}</div>
                 <div>
-                  <span class="receipt-price">10,000</span>
+                  <span class="receipt-price">{{ pharmacyBill?.totalPrice.toLocaleString() }}</span>
                   <span class="won">원</span>
                 </div>
               </div>
               <div class="receipt-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">승인일시</div>
-                  <div>2024-09-23 11:19</div>
+                  <div>
+                    {{ moment(pharmacyBill?.createYmd).format('YYYY-MM-DD HH:MM') }}
+                  </div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">거래유형</div>
@@ -446,27 +669,27 @@ const saveAsImage = async (item: string) => {
               <div class="receipt-top dotted-top">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">공급가액</div>
-                  <div>9,091원</div>
+                  <div>{{ (2340 - Math.floor((2340 * 0.1) / 10) * 10).toLocaleString() }}원</div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">부가세</div>
-                  <div>909원</div>
+                  <div>{{ (Math.floor((2340 * 0.1) / 10) * 10).toLocaleString() }}원</div>
                 </div>
               </div>
               <div class="receipt-top dotted-top" style="margin-bottom: 18px">
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">가맹점명</div>
-                  <div>김성헌약국</div>
+                  <div>{{ pharmacyBill?.pharmacyNm }}</div>
                 </div>
                 <div class="receipt-info-line">
                   <div class="receipt-info-left">사업자번호</div>
-                  <div>123-456-7890</div>
+                  <div>{{ pharmacyBill?.pharmacyNo }}</div>
                 </div>
               </div>
             </CarouselItem>
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious @click="handleReceiptIndex(0)" />
+          <CarouselNext @click="handleReceiptIndex(1)" />
         </Carousel>
         <DialogFooter class="modal-footer">
           <Button size="lg" @click="saveAsImage('carousel-item')">이미지로 저장</Button>
@@ -514,6 +737,13 @@ const saveAsImage = async (item: string) => {
   justify-content: center;
   align-items: center;
 }
+.claim {
+  background-color: #b4c8d5;
+}
+.check {
+  background-color: #ffeeab;
+}
+
 .misc-info-text {
   display: flex;
   flex-direction: column;

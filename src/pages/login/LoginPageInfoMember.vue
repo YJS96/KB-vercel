@@ -16,11 +16,11 @@ import {
   SelectValue
 } from '@/components/ui/select';
 
-// Vue Router와 Signup 스토어 인스턴스를 생성합니다.
+// Vue Router와 Signup 스토어 인스턴스 생성
 const router = useRouter();
 const signupStore = useSignupStore();
 
-// 폼 입력값을 위한 반응형 변수들을 생성합니다.
+// 폼 입력값을 위한 반응형 변수 정의
 const memberType = ref('');
 const name = ref('');
 const phoneNumber = ref('');
@@ -28,25 +28,26 @@ const phoneCarrier = ref('');
 const residentNumberFront = ref('');
 const residentNumberBack = ref('');
 
-// 폼의 유효성을 검사하는 computed 속성을 정의합니다.
+// 폼 유효성 검사를 위한 computed 속성 정의
 const isFormValid = computed(
   () =>
+    memberType.value !== '' &&
     name.value !== '' &&
     phoneNumber.value !== '' &&
     phoneCarrier.value !== '' &&
     residentNumberFront.value.length === 6 &&
-    residentNumberBack.value.length === 1
+    residentNumberBack.value.length === 7
 );
 
-// 회원 유형을 선택하는 함수를 정의합니다.
+// 회원 유형 선택 함수
 const selectMemberType = (type: string) => {
   memberType.value = type;
 };
 
-// 폼 제출 핸들러를 정의합니다.
+// 폼 제출 핸들러
 const handleSubmit = async () => {
   if (isFormValid.value) {
-    // 입력된 정보를 Pinia 스토어에 저장합니다.
+    // 입력된 정보를 Pinia 스토어에 저장
     signupStore.setUserInfo({
       memberType: memberType.value,
       commonInfo: {
@@ -57,7 +58,7 @@ const handleSubmit = async () => {
       }
     });
 
-    // 선택된 회원 유형에 따라 다른 페이지로 라우팅합니다.
+    // 선택된 회원 유형에 따라 다른 페이지로 라우팅
     if (memberType.value === '일반 회원') {
       router.push('/login/bank_type');
     } else if (memberType.value === '의사') {
@@ -140,17 +141,13 @@ const handleSubmit = async () => {
           maxlength="6"
         />
         <div>_</div>
-        <div class="number-back">
-          <Input
-            type="text"
-            inputmode="numeric"
-            id="resident-number-input-back"
-            v-model="residentNumberBack"
-            maxlength="1"
-            ref="residentNumberBackRef"
-          />
-          <span class="back-stars">* * * * * *</span>
-        </div>
+        <Input
+          type="password"
+          inputmode="numeric"
+          id="resident-number-input-back"
+          v-model="residentNumberBack"
+          maxlength="7"
+        />
       </div>
     </div>
 
@@ -211,16 +208,9 @@ const handleSubmit = async () => {
   justify-content: space-between;
 }
 
-.number-back {
+#resident-number-input-front,
+#resident-number-input-back {
   width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.back-stars {
-  font-size: 18px;
-  color: var(--dark-gray);
 }
 
 .next-button {
@@ -228,11 +218,6 @@ const handleSubmit = async () => {
   right: 5.13%;
   bottom: 80px;
   position: absolute;
-}
-
-#resident-number-input-back {
-  width: 40px;
-  height: 40px;
 }
 
 label {

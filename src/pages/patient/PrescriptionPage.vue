@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted } from 'vue';
+import moment from 'moment';
 import axiosInstance from '@/api/instance';
 import HeadBar from '@/components/HeadBar.vue';
 import NavBar from '@/components/NavBar.vue';
@@ -12,10 +13,15 @@ interface Prescription {
   duration: number;
   description: string;
   prescriptionSt: boolean;
-  insuranceSt: boolean;
-  doctorId: number | null;
-  userId: number | null;
-  chemistId: number | null;
+  createYmd: string;
+  hospitalNm: string;
+  maxDate: number;
+  pharmacyNm: string;
+  diseaseList: DiseaseList[];
+}
+
+interface DiseaseList {
+  diseaseNm: string;
 }
 
 const prescriptions = ref<Prescription[]>([]);
@@ -23,6 +29,13 @@ const pageIndex = ref(0);
 const pageSize = 6;
 const loading = ref(false);
 const hasMore = ref(true);
+const today = moment();
+
+const calculateRemainingDays = (createYmd: string, duration: number) => {
+  const createdDate = moment(createYmd);
+  const daysPassed = today.diff(createdDate, 'days');
+  return Math.max(0, duration - daysPassed - 1);
+};
 
 const fetchPrescriptions = async () => {
   if (loading.value || !hasMore.value) return;
@@ -87,22 +100,28 @@ onUnmounted(() => {
     >
       <div class="presc-top">
         <div>
-          <div class="name-hospital">{{ prescription.prescriptionPk }}김성헌 내과의원</div>
-          <div class="name-pharm">어린이대공원약국</div>
+          <div class="name-hospital">{{ prescription.hospitalNm }}</div>
+          <div class="name-pharm">{{ prescription.pharmacyNm }}</div>
         </div>
-        <div class="name-hospital red">D-3</div>
+        <div class="name-hospital" :class="prescription.prescriptionSt ? '' : 'red'">
+          {{
+            prescription.prescriptionSt
+              ? '수령완료'
+              : `D-${calculateRemainingDays(prescription.createYmd, prescription.duration)}`
+          }}
+        </div>
       </div>
       <div class="presc-bottom">
         <div class="type-date">
           <div class="type">
             <i class="fa-solid fa-virus"></i>
-            <span>감기</span>
+            <span>{{ prescription.diseaseList[0].diseaseNm }}</span>
           </div>
-          <span>24. 09. 10 | 오후 4:18</span>
+          <span>{{ moment(prescription.createYmd).format('YY. M. DD. | HH:MM') }}</span>
         </div>
         <div class="intake-day">
-          <div class="per-day">1일 3회</div>
-          <div class="duration">3일치</div>
+          <!-- <div class="per-day">1일 3회</div> -->
+          <div class="duration">{{ prescription.maxDate ?? 3 }}일치</div>
         </div>
       </div>
     </ShadowBox>

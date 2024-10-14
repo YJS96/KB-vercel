@@ -5,6 +5,14 @@ import { app as firebaseApp, requestForToken, onMessageListener } from '@/fireba
 import { isSupported } from 'firebase/messaging';
 import { Toaster, toast } from '@steveyuowo/vue-hot-toast';
 
+import BanggabdaScreen from './components/BanggabdaScreen.vue';
+
+const isLoading = ref(true);
+
+const finishLoading = () => {
+  isLoading.value = false;
+};
+
 const router = useRouter();
 const threshold = 176; // 새로고침을 트리거하는 당김 거리 (픽셀)
 const pullDistance = ref(0);
@@ -94,7 +102,8 @@ onMessageListener()
       <RouterView />
     </div>
   </div>
-  <Toaster />
+
+  <!-- <BanggabdaScreen v-if="isLoading" @loading-finished="finishLoading" /> -->
 </template>
 
 <style scoped>

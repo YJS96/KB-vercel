@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import HeadBar from '@/components/HeadBar.vue';
 import Main from '@/components/Main.vue';
@@ -8,30 +8,91 @@ import Button from '@/components/ui/button/Button.vue';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger
 } from '@/components/ui/dialog';
 import { QrcodeStream } from 'vue-qrcode-reader';
+import axiosInstance from '@/api/instance';
+import { toast } from '@steveyuowo/vue-hot-toast';
 
+// QR 코드 데이터의 타입을 정의합니다.
+interface QRData {
+  userId: string;
+  prescriptionId: string;
+  hello: string;
+}
+
+// Vue Router를 사용하기 위한 설정
 const router = useRouter();
+
+// 다이얼로그 상태를 관리하는 ref
 const isDialogOpen = ref(false);
 
-function onDetect(detectedCodes: Array<{ rawValue: string }>) {
-  const prescriptionId = detectedCodes[0]?.rawValue || 'default';
-  isDialogOpen.value = false;
-  router.push({
-    name: '/pharmacistPayment',
-    params: { id: prescriptionId }
-  });
+// 최근 처방전 목록을 저장하는 ref
+const recentPrescriptions = ref([]);
+
+// QR 코드가 감지되었을 때 실행되는 함수
+async function onDetect(detectedCodes: Array<{ rawValue: string }>) {
+  const qrDataString = detectedCodes[0]?.rawValue;
+  console.log(qrDataString);
+  const qrData = JSON.parse(qrDataString);
+  console.log(qrData);
+  let isValid = false;
+  if (qrData) {
+    try {
+      if (qrData.hello === 'weBangapda') {
+        isValid = await validateQRInfo(qrData);
+      }
+      if (isValid) {
+        isDialogOpen.value = false;
+        router.push(`/pharmacist/${qrData.prescriptionId}`);
+      } else {
+        toast.error('잘못된 QR 코드입니다.');
+      }
+    } catch (err) {
+      toast.error('QR 코드 처리 중 오류가 발생했습니다.');
+    }
+  } else {
+    toast.error('QR 코드를 읽을 수 없습니다.');
+  }
 }
 
-const error = ref('');
-
+// QR 코드 스캔 중 오류가 발생했을 때 실행되는 함수
 function onError(err: Error) {
-  error.value = `오류: ${err.message}`;
+  toast.error(`QR 스캔 오류: ${err.message}`);
 }
+
+// QR 정보 유효성 검사 함수 (실제 구현 필요)
+async function validateQRInfo(qrData: QRData) {
+  if (qrData.prescriptionId && qrData.userId) return true;
+  return false;
+}
+
+// 최근 처방전 목록을 가져오는 함수
+async function fetchRecentPrescriptions() {
+  try {
+    const response = await axiosInstance.get('/api/pharmacy/prescription');
+    // @ts-ignore
+    recentPrescriptions.value = response.data.map((prescription) => ({
+      id: prescription.prescriptionId,
+      name: prescription.patientName,
+      date: formatDate(prescription.createdAt),
+      status: prescription.status
+    }));
+  } catch (err) {
+    console.error('최근 처방전 목록을 가져오는 데 실패했습니다:', err);
+  }
+}
+
+// 날짜 형식을 변환하는 함수
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return `${date.getFullYear().toString().slice(2)}. ${(date.getMonth() + 1).toString().padStart(2, '0')}. ${date.getDate().toString().padStart(2, '0')} | ${date.getHours() >= 12 ? '오후' : '오전'} ${date.getHours() % 12 || 12}:${date.getMinutes().toString().padStart(2, '0')}`;
+}
+
+// 컴포넌트가 마운트될 때 최근 처방전 목록을 가져옵니다.
+onMounted(fetchRecentPrescriptions);
 </script>
 
 <template>
@@ -53,64 +114,37 @@ function onError(err: Error) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>QR 코드 스캔</DialogTitle>
-            <DialogDescription>처방전 QR 코드를 스캔해주세요.</DialogDescription>
           </DialogHeader>
           <QrcodeStream @detect="onDetect" @error="onError" />
-          <p v-if="error">{{ error }}</p>
         </DialogContent>
       </Dialog>
+      {{}}
 
-      <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="0">
+      <!-- <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="0">
         <div class="recent-list-title">
           <div>최근 처방전 내역</div>
         </div>
-
         <div class="divider"></div>
-
         <div class="recent-list">
-          <div class="recent-item">
+          <div
+            v-for="prescription in recentPrescriptions"
+            :key="prescription.id"
+            class="recent-item"
+          >
             <div class="recent-info">
               <div class="recent-group">
                 <i class="fa-regular fa-file"></i>
-                <div class="recent-name">한상민 환자님</div>
+                <div class="recent-name">{{ prescription.name }} 환자님</div>
               </div>
-              <div class="recent-date">24. 09. 10 | 오후 4:18</div>
+              <div class="recent-date">{{ prescription.date }}</div>
             </div>
             <div class="recent-status">
               <i class="fa-solid fa-chevron-right"></i>
-              <span class="status-text">결제 완료</span>
-            </div>
-          </div>
-
-          <div class="recent-item">
-            <div class="recent-info">
-              <div class="recent-group">
-                <i class="fa-regular fa-file"></i>
-                <div class="recent-name">문환희 환자님</div>
-              </div>
-              <div class="recent-date">24. 09. 09 | 오전 11:30</div>
-            </div>
-            <div class="recent-status">
-              <i class="fa-solid fa-chevron-right"></i>
-              <span class="status-text">결제 완료</span>
-            </div>
-          </div>
-
-          <div class="recent-item">
-            <div class="recent-info">
-              <div class="recent-group">
-                <i class="fa-regular fa-file"></i>
-                <div class="recent-name">김도은 환자님</div>
-              </div>
-              <div class="recent-date">24. 09. 09 | 오전 11:30</div>
-            </div>
-            <div class="recent-status">
-              <i class="fa-solid fa-chevron-right"></i>
-              <span class="status-text">결제 완료</span>
+              <span class="status-text">{{ prescription.status }}</span>
             </div>
           </div>
         </div>
-      </ShadowBox>
+      </ShadowBox> -->
     </div>
   </Main>
 </template>
@@ -130,7 +164,6 @@ function onError(err: Error) {
   width: 160px;
   height: 140px;
   background: var(--css-primary);
-  /* background: linear-gradient(135deg, var(--kb-yellow) 0%, var(--nav-gray)); */
   border-radius: 12px;
   margin-bottom: 20px;
 }
@@ -148,13 +181,13 @@ function onError(err: Error) {
 
 .qr-icon-container i {
   font-size: 24px;
-  color: var(black);
+  color: var(--black);
 }
 
 .qr-text {
   display: flex;
   flex-direction: column;
-  color: var(black);
+  color: var(--black);
 }
 
 .qr-title {
@@ -166,6 +199,11 @@ function onError(err: Error) {
 .qr-subtitle {
   font-size: 14px;
   opacity: 0.8;
+}
+
+.error-message {
+  color: #ff4b4b;
+  margin-top: 10px;
 }
 
 .recent-list-title {

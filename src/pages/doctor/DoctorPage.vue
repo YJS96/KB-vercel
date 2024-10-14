@@ -24,8 +24,15 @@ import {
   NumberFieldInput
 } from '@/components/ui/number-field';
 
+import axiosInstance from '@/api/instance';
+import { toast } from '@steveyuowo/vue-hot-toast';
+import MedicineSelector from '@/components/MedicineSelector.vue';
+import DiseaseSelector from '@/components/DiseaseSelector.vue';
+import InjectionSelector from '@/components/InjectionSelector.vue';
+
 interface Medicine {
   name: string;
+  medicinePk: string;
   morning: number;
   afternoon: number;
   evening: number;
@@ -33,15 +40,39 @@ interface Medicine {
   memo: string;
 }
 
+interface Injection {
+  name: string;
+  injectionPk: string;
+  dosePerMorning: number;
+  dosePerLunch: number;
+  dosePerDinner: number;
+  totalDay: number;
+  method: string;
+}
+
+const showInjectionModal = ref(false);
+const injections = ref<Injection[]>([]); // 주사제 리스트
+const newInjection = ref<Injection>({
+  name: '',
+  injectionPk: '',
+  dosePerMorning: 0,
+  dosePerLunch: 0,
+  dosePerDinner: 0,
+  totalDay: 0,
+  method: ''
+});
+
 const name = ref('');
 const residentNumFront = ref('');
 const residentNumBack = ref('');
-const diseaseCode = ref('');
+const diseaseCode = ref<string>('');
+const description = ref('');
 const medicines = ref<Medicine[]>([]);
 
 const showMedicineModal = ref(false);
 const newMedicine = ref<Medicine>({
   name: '',
+  medicinePk: '',
   morning: 0,
   afternoon: 0,
   evening: 0,
@@ -53,7 +84,15 @@ const router = useRouter();
 
 const addMedicine = () => {
   medicines.value.push({ ...newMedicine.value });
-  newMedicine.value = { name: '', morning: 0, afternoon: 0, evening: 0, days: 0, memo: '' };
+  newMedicine.value = {
+    name: '',
+    medicinePk: '',
+    morning: 0,
+    afternoon: 0,
+    evening: 0,
+    days: 0,
+    memo: ''
+  };
   showMedicineModal.value = false;
 };
 
@@ -61,24 +100,89 @@ const removeMedicine = (index: number) => {
   medicines.value.splice(index, 1);
 };
 
+const addInjection = () => {
+  injections.value.push({ ...newInjection.value });
+  newInjection.value = {
+    name: '',
+    injectionPk: '',
+    dosePerMorning: 0,
+    dosePerLunch: 0,
+    dosePerDinner: 0,
+    totalDay: 0,
+    method: ''
+  };
+  showInjectionModal.value = false;
+};
+
+const removeInjection = (index: number) => {
+  injections.value.splice(index, 1);
+};
+
 const isFormValid = computed(
   () =>
     name.value.trim() !== '' &&
     residentNumFront.value.length === 6 &&
-    residentNumBack.value.length === 1 &&
-    diseaseCode.value.trim() !== '' &&
+    residentNumBack.value.length === 7 &&
     medicines.value.length > 0
 );
 
 const handleResidentNumBackInput = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  input.value = input.value.replace(/\D/g, '').slice(0, 1);
-  residentNumBack.value = input.value;
+  const cleanedValue = input.value.replace(/\D/g, ''); // 숫자만 허용
+  residentNumBack.value = cleanedValue.slice(0, 7); // 최대 7자리 숫자만 저장
 };
 
-const handleNextButtonClick = () => {
-  if (isFormValid.value) {
-    router.push('/doctor/check');
+const handleNextButtonClick = async () => {
+  try {
+    const data = {
+      userNm: name.value, // 사용자의 이름
+      firstNo: residentNumFront.value, // 주민등록번호 앞자리
+      lastNo: residentNumBack.value, // 주민등록번호 뒷자리
+      duration: 3, // 처방전 기간
+      description: description.value, // 처방전 설명
+
+      // diseaseCode가 비어있지 않으면 parseInt로 변환하고, 그렇지 않으면 빈 배열 처리
+      diseasePkList: diseaseCode.value ? [parseInt(diseaseCode.value)] : [],
+
+      // medicineIntakeInfoList: 약 목록이 있을 경우 처리
+      medicineIntakeInfoList:
+        medicines.value.length > 0
+          ? medicines.value.map((medicine) => ({
+              medicinePk: medicine.medicinePk ? parseInt(medicine.medicinePk) : null, // 약의 PK 값을 number로 변환, 빈 값 처리
+              totalDay: medicine.days,
+              dosePerMorning: medicine.morning,
+              dosePerLunch: medicine.afternoon,
+              dosePerDinner: medicine.evening,
+              method: medicine.memo || ''
+            }))
+          : null,
+
+      // injectionIntakeInfoList: 주사제 목록이 있을 경우 처리
+      injectionIntakeInfoList:
+        injections.value.length > 0
+          ? injections.value.map((injection) => ({
+              injectionPk: injection.injectionPk ? parseInt(injection.injectionPk) : null, // 주사제 PK 값을 number로 변환, 빈 값 처리
+              totalDay: injection.totalDay,
+              dosePerMorning: injection.dosePerMorning,
+              dosePerLunch: injection.dosePerLunch,
+              dosePerDinner: injection.dosePerDinner,
+              method: injection.method || ''
+            }))
+          : null
+    };
+
+    console.log(data); // 디버그를 위한 데이터 확인
+    const response = await axiosInstance.post('/api/patient/prescription/post?doctorId=1', data);
+    console.log(response.data.data); // PK 값을 확인할 수 있는 부분
+    if (response.data.data === true) {
+      toast.success('처방전을 등록했습니다.');
+      // 라우터로 prescriptionId를 params로 넘김
+    }
+    if (isFormValid.value) {
+      router.push(`/doctor/check/${response.data.data}`);
+    }
+  } catch (err) {
+    toast.error('존재하지 않는 사용자입니다.');
   }
 };
 </script>
@@ -110,26 +214,30 @@ const handleNextButtonClick = () => {
               <div>-</div>
               <div class="resident-num-back">
                 <Input
-                  type="text"
+                  type="password"
                   id="resident-num-back"
                   v-model="residentNumBack"
                   @input="handleResidentNumBackInput"
+                  placeholder="ex) 1111222"
                   inputmode="numeric"
-                  maxlength="1"
-                  class="w-10"
+                  maxlength="7"
                 />
-                <div>* * * * * *</div>
               </div>
             </div>
           </div>
 
           <div class="prescription-info">
             <Label for="disease-code">질병 코드 등록</Label>
+            <DiseaseSelector v-model="diseaseCode" />
+          </div>
+
+          <div class="prescription-info">
+            <Label for="description">조제시 참고사항</Label>
             <Input
               type="text"
               id="disease-code"
-              v-model="diseaseCode"
-              placeholder="질병 코드를 입력하세요"
+              v-model="description"
+              placeholder="조제시 참고사항을 입력하세요"
             />
           </div>
 
@@ -152,11 +260,15 @@ const handleNextButtonClick = () => {
 
                   <div class="medicine-form">
                     <Label for="medicine-name">약 이름</Label>
-                    <Input
+                    <MedicineSelector
+                      v-model="newMedicine.medicinePk"
+                      @update:medicineName="newMedicine.name = $event"
+                    />
+                    <!-- <Input
                       id="medicine-name"
                       v-model="newMedicine.name"
                       placeholder="약 이름을 입력하세요"
-                    />
+                    /> -->
                   </div>
                   <div class="medicine-form">
                     <div class="dosage-inputs">
@@ -217,6 +329,117 @@ const handleNextButtonClick = () => {
                   <div v-if="medicine.memo" class="medicine-memo">{{ medicine.memo }}</div>
                 </div>
                 <Button variant="ghost" size="icon" @click="removeMedicine(index)">
+                  <i class="fa-solid fa-trash"></i>
+                </Button>
+              </div>
+            </div>
+          </div>
+          <!-- 주사제 등록 모달 -->
+          <div class="prescription-info">
+            <div class="pill-container">
+              <Label>주사제 등록</Label>
+              <Dialog v-model:open="showInjectionModal">
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <i class="fa-solid fa-plus"></i>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>주사제 등록</DialogTitle>
+                    <DialogDescription>새로운 주사제를 등록하세요.</DialogDescription>
+                  </DialogHeader>
+
+                  <div class="divider"></div>
+
+                  <!-- 주사제 이름 입력 -->
+                  <div class="medicine-form">
+                    <Label for="injection-name">주사제 이름</Label>
+                    <InjectionSelector
+                      v-model="newInjection.injectionPk"
+                      @update:injectionName="newInjection.name = $event"
+                    />
+                  </div>
+
+                  <!-- 주사제 복용량 입력 -->
+                  <div class="medicine-form">
+                    <div class="dosage-inputs">
+                      <div class="dosage-day">
+                        <NumberField :min="0" v-model="newInjection.dosePerMorning">
+                          <Label for="dosePerMorning">아침</Label>
+                          <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput />
+                            <NumberFieldIncrement />
+                          </NumberFieldContent>
+                        </NumberField>
+                      </div>
+                      <div class="dosage-day">
+                        <NumberField :min="0" v-model="newInjection.dosePerLunch">
+                          <Label for="dosePerLunch">점심</Label>
+                          <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput />
+                            <NumberFieldIncrement />
+                          </NumberFieldContent>
+                        </NumberField>
+                      </div>
+                      <div class="dosage-day">
+                        <NumberField :min="0" v-model="newInjection.dosePerDinner">
+                          <Label for="dosePerDinner">저녁</Label>
+                          <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput />
+                            <NumberFieldIncrement />
+                          </NumberFieldContent>
+                        </NumberField>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 투여 일수 입력 -->
+                  <div class="medicine-form">
+                    <NumberField :min="0" v-model="newInjection.totalDay">
+                      <Label for="totalDay">투여 일수</Label>
+                      <NumberFieldContent>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                      </NumberFieldContent>
+                    </NumberField>
+                  </div>
+
+                  <!-- 투여 방법 입력 -->
+                  <div class="medicine-form">
+                    <Label for="method">투여 방법</Label>
+                    <Textarea
+                      id="method"
+                      v-model="newInjection.method"
+                      placeholder="투여 방법을 입력하세요."
+                    />
+                  </div>
+
+                  <div class="dialog-footer">
+                    <Button @click="addInjection" size="lg">등록</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <!-- 등록된 주사제 리스트 -->
+            <div class="divider"></div>
+            <div v-if="injections.length > 0" class="medicine-list">
+              <div v-for="(injection, index) in injections" :key="index" class="medicine-item">
+                <div class="medicine-info">
+                  <div class="medicine-name">{{ injection.name }}</div>
+                  <div class="medicine-dosage">
+                    아침: {{ injection.dosePerMorning }} / 점심: {{ injection.dosePerLunch }} /
+                    저녁: {{ injection.dosePerDinner }}
+                  </div>
+                  <div>{{ injection.totalDay }} 일</div>
+                  <div v-if="injection.method" class="medicine-memo">{{ injection.method }}</div>
+                </div>
+                <Button variant="ghost" size="icon" @click="removeInjection(index)">
                   <i class="fa-solid fa-trash"></i>
                 </Button>
               </div>
@@ -356,8 +579,8 @@ const handleNextButtonClick = () => {
 }
 
 .fixed-button {
-  position: fixed;
-  bottom: 20px;
+  position: absolute;
+  bottom: 40px;
   left: 20px;
   right: 20px;
   z-index: 10;

@@ -18,6 +18,8 @@ import PharmacistPageScanPayment from '@/pages/pharmacist/PharmacistPageScanPaym
 import DoctorPage from '@/pages/doctor/DoctorPage.vue';
 import DoctorFinalCheck from '@/pages/doctor/DoctorFinalCheck.vue';
 import LoginPagePharmacist2 from '@/pages/login/LoginPagePharmacist2.vue';
+import Error404 from '@/pages/Error404.vue';
+import InjectionDetail from '@/pages/patient/InjectionDetail.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -113,9 +115,24 @@ const router = createRouter({
       component: MedicineDetail
     },
     {
+      path: '/injection/:id',
+      name: 'injectionDetail',
+      component: InjectionDetail
+    },
+    {
       path: '/prescription/:id',
       name: 'PrescriptionDetail',
       component: PrescriptionDetail
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'Error404',
+      component: Error404
+    },
+    {
+      path: '/doctor/check/:id', // URL에서 :id 부분이 params로 전달됨
+      name: 'DoctorFinalCheck',
+      component: DoctorFinalCheck
     }
   ]
 });

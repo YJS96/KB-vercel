@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import moment from 'moment';
-import { Toaster } from '@steveyuowo/vue-hot-toast';
 import '@/assets/toast.css';
 import 'moment/locale/ko';
 import { useThemeStore } from '@/stores/theme';
@@ -16,31 +15,29 @@ import { Button } from '@/components/ui/button';
 import axiosInstance from '@/api/instance';
 import { toast } from '@steveyuowo/vue-hot-toast';
 
-
-interface medicineIntake  {
-  medInkPk : Number;
-  meal : string;
-  day : [];
-  eatSt : boolean;
-  userId : Number;
-  medicineId : Number;
-  intakeCnt : Number;
-  medicineNm : string;
-  caution : string;
+interface medicineIntake {
+  medInkPk: Number;
+  meal: string;
+  day: [];
+  eatSt: boolean;
+  userId: Number;
+  medicineId: Number;
+  intakeCnt: Number;
+  medicineNm: string;
+  caution: string;
 }
 
 interface injectionIntake {
-  injInkPk : Number;
-  meal : string;
-  eatSt : boolean;
-  day : [];
-  userId : Number;
-  injectionId : Number;
-  injectionNm : string;
-  sideEffect : string;
+  injInkPk: Number;
+  meal: string;
+  eatSt: boolean;
+  day: [];
+  userId: Number;
+  injectionId: Number;
+  injectionNm: string;
+  sideEffect: string;
 }
 
-const medicationStore = useMedicationStore();
 const mealTimeStore = useMealTimeStore();
 
 const themeStore = useThemeStore();
@@ -48,26 +45,24 @@ setTimeout(() => {
   themeStore.setThemeColor('#FDFDFD');
 }, 10);
 
-const time: Record<"ANYTIME" | "BREAKFAST" | "LUNCH" | "DINNER", string> = {
-  "ANYTIME": "매 식사마다",
-  "BREAKFAST": "아침",
-  "LUNCH": "점심",
-  "DINNER": "저녁"
+const time: Record<'ANYTIME' | 'BREAKFAST' | 'LUNCH' | 'DINNER', string> = {
+  ANYTIME: '매 식사마다',
+  BREAKFAST: '아침',
+  LUNCH: '점심',
+  DINNER: '저녁'
 };
-
 
 const getTimeValue = (key: keyof typeof time): string => {
-  return time[key] || "";
+  return time[key] || '';
 };
 
+const timeBA: Record<'AFTER' | 'BEFORE', string> = {
+  AFTER: '식사 후',
+  BEFORE: '식사 전'
+};
 
-const timeBA: Record<"AFTER" | "BEFORE", string> = {
-  "AFTER" : "식사 후",
-  "BEFORE" : "식사 전"
-}
-
-const getBAValue = (key: keyof typeof timeBA) :string => {
-  return timeBA[key] || "";
+const getBAValue = (key: keyof typeof timeBA): string => {
+  return timeBA[key] || '';
 };
 
 moment.locale('ko');
@@ -108,71 +103,97 @@ const getKoreanWeekday = (date: moment.Moment): string => {
 const medicineIntakeList = ref();
 const injectionIntakeList = ref();
 
-const getIntake = async(date : string) => {
-  await axiosInstance.get(`/api/medi/taking/list?userId=1&date=${date}`)
-  .then(res => {
-    medicineIntakeList.value = res.data.data.medicineIntakeList;
-  }).catch(err => {
-    console.log(err);
-  })
+const getIntake = async (date: string) => {
+  await axiosInstance
+    .get(`/api/medi/taking/list?userId=1&date=${date}`)
+    .then((res) => {
+      medicineIntakeList.value = res.data.data.medicineIntakeList;
+      console.log(res.data.data);
+    })
+    .catch((err) => {
+      console.log(err);
+    });
 
-  await axiosInstance.get(`/api/inj/taking/list?userId=1&date=${date}`)
-  .then(res => {
-    injectionIntakeList.value = res.data.data.injectionIntakeList;
-  }).catch(err => {
-    console.log(err);
-  })
-}
+  await axiosInstance
+    .get(`/api/inj/taking/list?userId=1&date=${date}`)
+    .then((res) => {
+      injectionIntakeList.value = res.data.data.injectionIntakeList;
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+};
 
-const toggleMediEatSt = async(id:number, st:boolean) => {
+const toggleMediEatSt = async (id: number, st: boolean) => {
   try {
-    const index = medicineIntakeList.value.findIndex((item:medicineIntake) => item.medInkPk === id);
+    const index = medicineIntakeList.value.findIndex(
+      (item: medicineIntake) => item.medInkPk === id
+    );
 
-    if(today.format('YYYY-MM-DD') !== medicineIntakeList.value[index].day.map((num: Number) => String(num).padStart(2, '0')).join('-')){
+    if (
+      today.format('YYYY-MM-DD') !==
+      medicineIntakeList.value[index].day
+        .map((num: Number) => String(num).padStart(2, '0'))
+        .join('-')
+    ) {
       toast.error('다른 날짜는 처리할 수 없습니다.');
       return;
     }
 
     const response = await axiosInstance.patch(`/api/medi/taking/comp/${id}?userId=1`);
-    
+
     if (index !== -1) {
       medicineIntakeList.value[index].eatSt = !medicineIntakeList.value[index].eatSt; // 업데이트된 데이터로 교체
     }
 
     if (!st) {
-        toast.success(`약 복용 확인하였습니다`);
-      } else {
-        toast.error(`약 복용 취소하였습니다`);
-      }
-  } catch(err) {
+      toast.success(`약 복용 확인하였습니다`);
+    } else {
+      toast.error(`약 복용 취소하였습니다`);
+    }
+  } catch (err) {
     console.log(err);
   }
-}
+};
 
-const toggleInjEatSt = async(id:number, st:boolean) => {
+const toggleInjEatSt = async (id: number, st: boolean) => {
   try {
-    const index = injectionIntakeList.value.findIndex((item:injectionIntake) => item.injInkPk === id);
+    const index = injectionIntakeList.value.findIndex(
+      (item: injectionIntake) => item.injInkPk === id
+    );
 
-    if(today.format('YYYY-MM-DD') !== injectionIntakeList.value[index].day.map((num: Number) => String(num).padStart(2, '0')).join('-')){
+    if (
+      today.format('YYYY-MM-DD') !==
+      injectionIntakeList.value[index].day
+        .map((num: Number) => String(num).padStart(2, '0'))
+        .join('-')
+    ) {
       toast.error('다른 날짜는 처리할 수 없습니다.');
       return;
     }
 
     const response = await axiosInstance.patch(`/api/inj/taking/comp/${id}?userId=1`);
-    
+
     if (index !== -1) {
       injectionIntakeList.value[index].eatSt = !injectionIntakeList.value[index].eatSt; // 업데이트된 데이터로 교체
     }
 
     if (!st) {
-        toast.success(`약 복용 확인하였습니다`);
-      } else {
-        toast.error(`약 복용 취소하였습니다`);
-      }
-  } catch(err) {
+      toast.success(`약 복용 확인하였습니다`);
+    } else {
+      toast.error(`약 복용 취소하였습니다`);
+    }
+  } catch (err) {
     console.log(err);
   }
-}
+};
+
+const noMedicine = computed(() => {
+  return (
+    (!medicineIntakeList.value || medicineIntakeList.value.length === 0) &&
+    (!injectionIntakeList.value || injectionIntakeList.value.length === 0)
+  );
+});
 
 onMounted(() => {
   if (calendarContainer.value) {
@@ -186,15 +207,9 @@ onMounted(() => {
   }
   getIntake(today.format('YYYY-MM-DD'));
 });
-
-
-
-
-
 </script>
 
 <template>
-  <Toaster />
   <HeadBar>복용약</HeadBar>
   <NavBar />
   <Main :headbar="true" :navbar="true" :bg-gray="true">
@@ -212,72 +227,90 @@ onMounted(() => {
       </div>
     </div>
 
-<!-- 약 -->
-    <ShadowBox v-for="intake in medicineIntakeList" :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+    <!-- 약 -->
+    <ShadowBox
+      v-for="(intake, index) in medicineIntakeList"
+      :padding-x="20"
+      :padding-y="20"
+      :margin-bottom="12"
+      :radius="false"
+      :key="index"
+    >
       <div class="day-alert-top">
         <div class="meal-and-time">
-          <span class="meal">{{getTimeValue(intake.meal)}}</span>
+          <span class="meal">{{ getTimeValue(intake.meal) }}</span>
           <span class="meal-time">{{ mealTimeStore.breakfast }}</span>
         </div>
         <Button
-          :variant="(intake.eatSt) ? 'destructive' : 'default'"
+          :variant="intake.eatSt ? 'destructive' : 'default'"
           @click="toggleMediEatSt(intake.medInkPk, intake.eatSt)"
           >{{ intake.eatSt ? '취소' : '확인' }}
         </Button>
       </div>
       <div class="medicine-list">
-
         <div class="medicine-info-frame" @click="$router.push(`/medicine/${intake.medicineId}`)">
           <div class="medicine-info-left">
             <div class="medicine-icon-name">
-              <div class="medicine-icon"></div>
+              <div class="medicine-icon">
+                <img :src="`/images/medicines/${intake.medicineNm}.png`" alt="" />
+              </div>
               <span class="medicine-name">{{ intake.medicineNm }}</span>
             </div>
             <div class="medicine-badge-frame">
-              <Badge v-for="c in intake.caution.split(',')">{{ c }}</Badge>
+              <Badge v-for="(c, index) in intake.caution.split(',')" :key="index">{{ c }}</Badge>
             </div>
           </div>
           <span class="medicine-intake">{{ intake.intakeCnt }}정</span>
         </div>
-
       </div>
     </ShadowBox>
 
-<!-- 여기부턴 주사제임 -->
-    <ShadowBox v-for="intake in injectionIntakeList" :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
+    <!-- 여기부턴 주사제임 -->
+    <ShadowBox
+      v-for="(intake, index) in injectionIntakeList"
+      :padding-x="20"
+      :padding-y="20"
+      :margin-bottom="12"
+      :radius="false"
+      :key="index"
+    >
       <div class="day-alert-top">
         <div class="meal-and-time">
-          <span class="meal">{{getTimeValue(intake.meal)}}</span>
+          <span class="meal">{{ getTimeValue(intake.meal) }}</span>
           <span class="meal-time">{{ mealTimeStore.breakfast }}</span>
         </div>
         <Button
-          :variant="(intake.eatSt) ? 'destructive' : 'default'"
+          :variant="intake.eatSt ? 'destructive' : 'default'"
           @click="toggleInjEatSt(intake.injInkPk, intake.eatSt)"
           >{{ intake.eatSt ? '취소' : '확인' }}
         </Button>
       </div>
       <div class="medicine-list">
-
         <div class="medicine-info-frame" @click="$router.push(`/injection/${intake.injectionId}`)">
           <div class="medicine-info-left">
             <div class="medicine-icon-name">
-              <div class="medicine-icon"></div>
+              <div class="medicine-icon">
+                <img :src="`/images/medicines/injection-icon.png`" alt="" />
+              </div>
               <span class="medicine-name">{{ intake.injectionNm }}</span>
             </div>
             <div class="medicine-badge-frame">
-              <Badge v-for="c in (intake.sideEffect ? intake.sideEffect.split(',').filter(Boolean) : [])" :key="c">
+              <Badge
+                v-for="c in intake.sideEffect ? intake.sideEffect.split(',').filter(Boolean) : []"
+                :key="c"
+              >
                 {{ c }}
               </Badge>
             </div>
           </div>
           <!-- <span class="medicine-intake">{{ intake.intakeCnt }}회</span> -->
         </div>
-
       </div>
     </ShadowBox>
 
+    <div class="no-medicine" v-if="noMedicine">복용할 약이 없습니다</div>
 
-<!-- 
+    <!-- 
 
   <ShadowBox :padding-x="20" :padding-y="20" :margin-bottom="12" :radius="false">
     <div class="day-alert-top">
@@ -340,7 +373,7 @@ onMounted(() => {
     </div>
   </ShadowBox>
 -->
-</Main>
+  </Main>
 </template>
 
 <style scoped>
@@ -451,6 +484,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
 .medicine-name {
@@ -466,5 +500,11 @@ onMounted(() => {
 .medicine-intake {
   font-size: 18px;
   font-weight: 500;
+}
+
+.no-medicine {
+  text-align: center;
+  margin: 56px 0;
+  color: var(--dark-gray);
 }
 </style>

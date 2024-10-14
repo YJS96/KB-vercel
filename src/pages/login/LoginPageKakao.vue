@@ -13,9 +13,11 @@ const navigateToNextPage = () => {
 <template>
   <Main :headbar="false" :navbar="false" :padded="false" :bg-gray="false">
     <div class="login-container">
-      <div class="login-icon"></div>
+      <div class="login-icon">
+        <img src="/icons/icon-256x256.png" alt="Banggabda" class="logo" />
+      </div>
 
-      <div class="login-name">우리 1-3조 kbAnk</div>
+      <div class="login-name">방갑다</div>
 
       <Button size="lg" class="login-kakao" @click="navigateToNextPage">
         <i class="fa-solid fa-comment"></i>카카오 로그인
@@ -34,14 +36,20 @@ const navigateToNextPage = () => {
 }
 
 .login-icon {
-  width: 80px;
-  height: 80px;
-  border-radius: 8%;
-  background-color: var(--gray);
+  width: 120px;
+  height: 120px;
+  border-radius: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   margin-bottom: 32px;
+  overflow: hidden;
+}
+
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .login-name {
@@ -49,6 +57,8 @@ const navigateToNextPage = () => {
   justify-content: center;
   align-items: center;
   margin-bottom: 80px;
+  font-size: 24px;
+  font-weight: bold;
 }
 
 .login-kakao {
